@@ -239,10 +239,12 @@ public abstract class AbstractGitHubConnector<T extends AbstractGitHubConfigurat
         try {
             dispose();
             client = newClient(this.configuration);
+
             if (instanceName != null) {
                 client.setInstanceName(instanceName);
             }
             client.test();
+
         } catch (RuntimeException e) {
             throw processRuntimeException(e);
         }

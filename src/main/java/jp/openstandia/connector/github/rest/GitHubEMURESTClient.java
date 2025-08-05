@@ -52,7 +52,6 @@ public class GitHubEMURESTClient implements GitHubClient<GitHubEMUSchema> {
 
     public GitHubEMURESTClient(GitHubEMUConfiguration configuration) {
         this.configuration = configuration;
-
         auth();
     }
 
@@ -283,6 +282,53 @@ public class GitHubEMURESTClient implements GitHubClient<GitHubEMUSchema> {
         return withAuth(() -> {
             SCIMEMUGroup scimEMUGroup = enterpriseApiClient.getSCIMEMUGroupByDisplayName(name.getNameValue());
             return scimEMUGroup;
+        });
+    }
+
+    @Override
+    public EMUSeat getEMUSeat(Uid uid, OperationOptions options, Set<String> attributesToGet) {
+        return withAuth(() -> {
+            EMUSeat seat = enterpriseApiClient.getEMUSeatByUid(uid.getUidValue());
+            return seat;
+        });
+    }
+
+    @Override
+    public EMUSeat getEMUSeat(Name name, OperationOptions options, Set<String> attributesToGet) {
+        return withAuth(() -> {
+            EMUSeat seat = enterpriseApiClient.getEMUSeatByDisplayName(name.getNameValue());
+            return seat;
+        });
+    }
+
+    @Override
+    public int getEMUSeats(QueryHandler<EMUSeat> handler, OperationOptions options, Set<String> fetchFieldsSet, int pageSize, int pageOffset) {
+        return withAuth(() -> {
+            SeatPagedSearchIterable<EMUSeat> iterable = enterpriseApiClient.listAllSeats(pageSize, pageOffset);
+
+            // 0 means no offset (requested all data)
+            if (pageOffset < 1) {
+                for (EMUSeat next : iterable) {
+                    if (!handler.handle(next)) {
+                        break;
+                    }
+                }
+                return iterable.getTotalSeats();
+            }
+
+            // Pagination
+            int count = 0;
+            for (EMUSeat next : iterable) {
+                count++;
+                if (!handler.handle(next)) {
+                    break;
+                }
+                if (count >= pageSize) {
+                    break;
+                }
+            }
+
+            return iterable.getTotalSeats();
         });
     }
 

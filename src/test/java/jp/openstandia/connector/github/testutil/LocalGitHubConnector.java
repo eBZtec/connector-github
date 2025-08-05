@@ -16,12 +16,12 @@
 package jp.openstandia.connector.github.testutil;
 
 import jp.openstandia.connector.github.GitHubClient;
-import jp.openstandia.connector.github.GitHubConfiguration;
-import jp.openstandia.connector.github.GitHubConnector;
+import jp.openstandia.connector.github.GitHubEMUConfiguration;
+import jp.openstandia.connector.github.GitHubEMUConnector;
 
-public class LocalGitHubConnector extends GitHubConnector {
+public class LocalGitHubConnector extends GitHubEMUConnector {
     @Override
-    protected GitHubClient newClient(GitHubConfiguration configuration) {
+    protected GitHubClient newClient(GitHubEMUConfiguration configuration) {
         return MockClient.instance();
     }
 }

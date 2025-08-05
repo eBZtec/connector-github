@@ -25,17 +25,11 @@ import org.identityconnectors.framework.common.exceptions.AlreadyExistsException
 import org.identityconnectors.framework.common.exceptions.UnknownUidException;
 import org.identityconnectors.framework.common.objects.Name;
 import org.identityconnectors.framework.common.objects.OperationOptions;
-import org.identityconnectors.framework.common.objects.ResultsHandler;
 import org.identityconnectors.framework.common.objects.Uid;
-import org.kohsuke.github.SCIMEMUGroup;
-import org.kohsuke.github.SCIMEMUUser;
-import org.kohsuke.github.SCIMPatchOperations;
-import org.kohsuke.github.SCIMUser;
+import org.kohsuke.github.*;
 
 import java.net.InetSocketAddress;
 import java.net.Proxy;
-import java.util.Collection;
-import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
@@ -81,78 +75,6 @@ public interface GitHubClient<T extends AbstractGitHubSchema<? extends AbstractG
     void auth();
 
     void close();
-
-    // User
-
-    default Uid createUser(T schema, SCIMUser scimUser) throws AlreadyExistsException {
-        throw new UnsupportedOperationException();
-    }
-
-    default String updateUser(T schema, Uid uid, String scimUserName, String scimEmail, String scimGivenName, String scimFamilyName, String login, OperationOptions options) throws UnknownUidException {
-        throw new UnsupportedOperationException();
-    }
-
-    default void deleteUser(T schema, Uid uid, OperationOptions options) throws UnknownUidException {
-        throw new UnsupportedOperationException();
-    }
-
-    default void getUsers(T schema, ResultsHandler handler, OperationOptions options, Set<String> attributesToGet, boolean allowPartialAttributeValues, int queryPageSize) {
-        throw new UnsupportedOperationException();
-    }
-
-    default void getUser(T schema, Uid uid, ResultsHandler handler, OperationOptions options, Set<String> attributesToGet, boolean allowPartialAttributeValues, int queryPageSize) {
-        throw new UnsupportedOperationException();
-    }
-
-    default void getUser(T schema, Name name, ResultsHandler handler, OperationOptions options, Set<String> attributesToGet, boolean allowPartialAttributeValues, int queryPageSize) {
-        throw new UnsupportedOperationException();
-    }
-
-    // Team
-
-    default List<String> getTeamIdsByUsername(String userLogin, int pageSize) {
-        throw new UnsupportedOperationException();
-    }
-
-    default boolean isOrganizationMember(String userLogin) {
-        throw new UnsupportedOperationException();
-    }
-
-    default void assignOrganizationRole(String userLogin, String organizationRole) {
-        throw new UnsupportedOperationException();
-    }
-
-    default void assignTeams(String login, String role, Collection<String> teams) {
-        throw new UnsupportedOperationException();
-    }
-
-    default void unassignTeams(String login, Collection<String> teams) {
-        throw new UnsupportedOperationException();
-    }
-
-    default Uid createTeam(T schema, String teamName, String description, String privacy, Long parentTeamDatabaseId) throws AlreadyExistsException {
-        throw new UnsupportedOperationException();
-    }
-
-    default Uid updateTeam(T schema, Uid uid, String teamName, String description, String privacy, Long parentTeamId, boolean clearParent, OperationOptions options) throws UnknownUidException {
-        throw new UnsupportedOperationException();
-    }
-
-    default void deleteTeam(T schema, Uid uid, OperationOptions options) throws UnknownUidException {
-        throw new UnsupportedOperationException();
-    }
-
-    default void getTeams(T schema, ResultsHandler handler, OperationOptions options, Set<String> attributesToGet, boolean allowPartialAttributeValues, int queryPageSize) {
-        throw new UnsupportedOperationException();
-    }
-
-    default void getTeam(T schema, Uid uid, ResultsHandler handler, OperationOptions options, Set<String> attributesToGet, boolean allowPartialAttributeValues, int queryPageSize) {
-        throw new UnsupportedOperationException();
-    }
-
-    default void getTeam(T schema, Name name, ResultsHandler handler, OperationOptions options, Set<String> attributesToGet, boolean allowPartialAttributeValues, int queryPageSize) {
-        throw new UnsupportedOperationException();
-    }
 
     // EMU User
 
@@ -203,6 +125,19 @@ public interface GitHubClient<T extends AbstractGitHubSchema<? extends AbstractG
     }
 
     default SCIMEMUGroup getEMUGroup(Name name, OperationOptions options, Set<String> attributesToGet) {
+        throw new UnsupportedOperationException();
+    }
+
+    // EMU Seat
+    default EMUSeat getEMUSeat(Uid uid, OperationOptions options, Set<String> attributesToGet) {
+        throw new UnsupportedOperationException();
+    }
+
+    default EMUSeat getEMUSeat(Name name, OperationOptions options, Set<String> attributesToGet) {
+        throw new UnsupportedOperationException();
+    }
+
+    default int getEMUSeats(QueryHandler<EMUSeat> handler, OperationOptions options, Set<String> fetchFieldsSet, int pageSize, int pageOffset) {
         throw new UnsupportedOperationException();
     }
 }

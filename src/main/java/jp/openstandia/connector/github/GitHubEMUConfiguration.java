@@ -36,6 +36,7 @@ public class GitHubEMUConfiguration extends AbstractGitHubConfiguration {
             helpMessageKey = "Set GitHub enterprise slug for EMU.",
             required = true,
             confidential = false)
+
     public String getEnterpriseSlug() {
         return enterpriseSlug;
     }

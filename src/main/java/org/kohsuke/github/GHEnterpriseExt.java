@@ -155,6 +155,28 @@ public class GHEnterpriseExt extends GHOrganization {
         return list.get(0);
     }
 
+    public EMUSeat getEMUSeatByDisplayName(String emuSeatDisplayName) throws IOException {
+        List<EMUSeat> allSeats = searchEMUSeats()
+                .list()
+                .toList();
+
+        return allSeats.stream()
+                .filter(seat -> emuSeatDisplayName.equals(seat.assignee.login))
+                .findFirst()
+                .orElse(null);
+    }
+
+    public EMUSeat getEMUSeatByUid(String emuSeatUid) throws IOException {
+        List<EMUSeat> allSeats = searchEMUSeats()
+                .list()
+                .toList();
+
+        return allSeats.stream()
+                .filter(seat -> emuSeatUid.equals(seat.assignee.id))
+                .findFirst()
+                .orElse(null);
+    }
+
     /**
      * Search groups.
      *
@@ -167,6 +189,15 @@ public class GHEnterpriseExt extends GHOrganization {
     public SCIMPagedSearchIterable<SCIMEMUGroup> listSCIMGroups(int pageSize, int pageOffset)
             throws IOException {
         return searchSCIMGroups().list().withPageSize(pageSize).withPageOffset(pageOffset);
+    }
+
+    public EMUSeatSearchBuilder searchEMUSeats() {
+        return new EMUSeatSearchBuilder(root, this);
+    }
+
+    public SeatPagedSearchIterable<EMUSeat> listAllSeats(int pageSize, int pageOffset)
+            throws IOException {
+        return searchEMUSeats().list().withPageSize(pageSize).withPageOffset(pageOffset);
     }
 
     public void deleteSCIMGroup(String scimGroupId) throws IOException {

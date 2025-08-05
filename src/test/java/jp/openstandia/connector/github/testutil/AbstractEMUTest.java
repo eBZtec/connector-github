@@ -16,6 +16,8 @@
 package jp.openstandia.connector.github.testutil;
 
 import jp.openstandia.connector.github.GitHubEMUConfiguration;
+import jp.openstandia.connector.github.GitHubEMUConnector;
+import org.identityconnectors.common.security.GuardedString;
 import org.identityconnectors.framework.api.APIConfiguration;
 import org.identityconnectors.framework.api.ConnectorFacade;
 import org.identityconnectors.framework.api.ConnectorFacadeFactory;
@@ -29,13 +31,24 @@ public abstract class AbstractEMUTest {
 
     protected GitHubEMUConfiguration newConfiguration() {
         GitHubEMUConfiguration conf = new GitHubEMUConfiguration();
-        conf.setEnterpriseSlug("localEnt");
+        conf.setEnterpriseSlug("");
+        conf.setEndpointURL("");
+        conf.setAccessToken(new GuardedString("".toCharArray()));
         return conf;
     }
 
     protected ConnectorFacade newFacade() {
         ConnectorFacadeFactory factory = ConnectorFacadeFactory.getInstance();
         APIConfiguration impl = TestHelpers.createTestConfiguration(LocalGitHubEMUConnector.class, newConfiguration());
+        impl.getResultsHandlerConfiguration().setEnableAttributesToGetSearchResultsHandler(false);
+        impl.getResultsHandlerConfiguration().setEnableNormalizingResultsHandler(false);
+        impl.getResultsHandlerConfiguration().setEnableFilteredResultsHandler(false);
+        return factory.newInstance(impl);
+    }
+
+    protected ConnectorFacade setupConnector() {
+        ConnectorFacadeFactory factory = ConnectorFacadeFactory.getInstance();
+        APIConfiguration impl = TestHelpers.createTestConfiguration(GitHubEMUConnector.class, newConfiguration());
         impl.getResultsHandlerConfiguration().setEnableAttributesToGetSearchResultsHandler(false);
         impl.getResultsHandlerConfiguration().setEnableNormalizingResultsHandler(false);
         impl.getResultsHandlerConfiguration().setEnableFilteredResultsHandler(false);

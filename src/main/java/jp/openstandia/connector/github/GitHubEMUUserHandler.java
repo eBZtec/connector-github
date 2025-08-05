@@ -175,7 +175,7 @@ public class GitHubEMUUserHandler extends AbstractGitHubEMUHandler {
                     }
                     SCIMRole scimRole = new SCIMRole();
                     scimRole.value = source;
-                    scimRole.primary = true;
+                    scimRole.primary = false;
 
                     dest.roles = new ArrayList<>();
                     dest.roles.add(scimRole);

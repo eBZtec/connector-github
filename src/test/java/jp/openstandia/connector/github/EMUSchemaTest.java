@@ -31,12 +31,14 @@ class EMUSchemaTest extends AbstractEMUTest {
         Schema schema = connector.schema();
 
         assertNotNull(schema);
-        assertEquals(2, schema.getObjectClassInfo().size());
+        assertEquals(3, schema.getObjectClassInfo().size());
 
         Optional<ObjectClassInfo> user = schema.getObjectClassInfo().stream().filter(o -> o.is("EMUUser")).findFirst();
         Optional<ObjectClassInfo> team = schema.getObjectClassInfo().stream().filter(o -> o.is("EMUGroup")).findFirst();
+        Optional<ObjectClassInfo> seat = schema.getObjectClassInfo().stream().filter(o -> o.is("GitHubCopilotSeat")).findFirst();
 
         assertTrue(user.isPresent());
         assertTrue(team.isPresent());
+        assertTrue(seat.isPresent());
     }
 }

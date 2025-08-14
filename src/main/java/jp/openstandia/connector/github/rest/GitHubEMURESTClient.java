@@ -52,7 +52,6 @@ public class GitHubEMURESTClient implements GitHubClient<GitHubEMUSchema> {
 
     public GitHubEMURESTClient(GitHubEMUConfiguration configuration) {
         this.configuration = configuration;
-
         auth();
     }
 
@@ -283,6 +282,53 @@ public class GitHubEMURESTClient implements GitHubClient<GitHubEMUSchema> {
         return withAuth(() -> {
             SCIMEMUGroup scimEMUGroup = enterpriseApiClient.getSCIMEMUGroupByDisplayName(name.getNameValue());
             return scimEMUGroup;
+        });
+    }
+
+    @Override
+    public GitHubCopilotSeat getCopilotSeat(Uid uid, OperationOptions options, Set<String> attributesToGet) {
+        return withAuth(() -> {
+            GitHubCopilotSeat seat = enterpriseApiClient.getCopilotSeatByUid(uid.getUidValue());
+            return seat;
+        });
+    }
+
+    @Override
+    public GitHubCopilotSeat getCopilotSeat(Name name, OperationOptions options, Set<String> attributesToGet) {
+        return withAuth(() -> {
+            GitHubCopilotSeat seat = enterpriseApiClient.getCopilotSeatByDisplayName(name.getNameValue());
+            return seat;
+        });
+    }
+
+    @Override
+    public int getCopilotSeats(QueryHandler<GitHubCopilotSeat> handler, OperationOptions options, Set<String> fetchFieldsSet, int pageSize, int pageOffset) {
+        return withAuth(() -> {
+            GitHubCopilotSeatPagedSearchIterable<GitHubCopilotSeat> iterable = enterpriseApiClient.listAllSeats(pageSize, pageOffset);
+
+            // 0 means no offset (requested all data)
+            if (pageOffset < 1) {
+                for (GitHubCopilotSeat next : iterable) {
+                    if (!handler.handle(next)) {
+                        break;
+                    }
+                }
+                return iterable.getTotalSeats();
+            }
+
+            // Pagination
+            int count = 0;
+            for (GitHubCopilotSeat next : iterable) {
+                count++;
+                if (!handler.handle(next)) {
+                    break;
+                }
+                if (count >= pageSize) {
+                    break;
+                }
+            }
+
+            return iterable.getTotalSeats();
         });
     }
 

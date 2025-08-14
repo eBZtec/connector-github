@@ -27,10 +27,7 @@ import org.identityconnectors.framework.common.objects.Name;
 import org.identityconnectors.framework.common.objects.OperationOptions;
 import org.identityconnectors.framework.common.objects.ResultsHandler;
 import org.identityconnectors.framework.common.objects.Uid;
-import org.kohsuke.github.SCIMEMUGroup;
-import org.kohsuke.github.SCIMEMUUser;
-import org.kohsuke.github.SCIMPatchOperations;
-import org.kohsuke.github.SCIMUser;
+import org.kohsuke.github.*;
 
 import java.net.InetSocketAddress;
 import java.net.Proxy;
@@ -203,6 +200,20 @@ public interface GitHubClient<T extends AbstractGitHubSchema<? extends AbstractG
     }
 
     default SCIMEMUGroup getEMUGroup(Name name, OperationOptions options, Set<String> attributesToGet) {
+        throw new UnsupportedOperationException();
+    }
+
+    // Copilot Seats
+
+    default GitHubCopilotSeat getCopilotSeat(Uid uid, OperationOptions options, Set<String> attributesToGet) {
+        throw new UnsupportedOperationException();
+    }
+
+    default GitHubCopilotSeat getCopilotSeat(Name name, OperationOptions options, Set<String> attributesToGet) {
+        throw new UnsupportedOperationException();
+    }
+
+    default int getCopilotSeats(QueryHandler<GitHubCopilotSeat> handler, OperationOptions options, Set<String> fetchFieldsSet, int pageSize, int pageOffset) {
         throw new UnsupportedOperationException();
     }
 }

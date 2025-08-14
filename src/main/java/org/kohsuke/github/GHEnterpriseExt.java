@@ -155,6 +155,28 @@ public class GHEnterpriseExt extends GHOrganization {
         return list.get(0);
     }
 
+    public GitHubCopilotSeat getCopilotSeatByDisplayName(String copilotSeatDisplayName) throws IOException {
+        List<GitHubCopilotSeat> allSeats = searchCopilotSeats()
+                .list()
+                .toList();
+
+        return allSeats.stream()
+                .filter(seat -> copilotSeatDisplayName.equals(seat.assignee.login))
+                .findFirst()
+                .orElse(null);
+    }
+
+    public GitHubCopilotSeat getCopilotSeatByUid(String copilotSeatUid) throws IOException {
+        List<GitHubCopilotSeat> allSeats = searchCopilotSeats()
+                .list()
+                .toList();
+
+        return allSeats.stream()
+                .filter(seat -> copilotSeatUid.equals(seat.assignee.id))
+                .findFirst()
+                .orElse(null);
+    }
+
     /**
      * Search groups.
      *
@@ -167,6 +189,15 @@ public class GHEnterpriseExt extends GHOrganization {
     public SCIMPagedSearchIterable<SCIMEMUGroup> listSCIMGroups(int pageSize, int pageOffset)
             throws IOException {
         return searchSCIMGroups().list().withPageSize(pageSize).withPageOffset(pageOffset);
+    }
+
+    public GitHubCopilotSeatsSearchBuilder searchCopilotSeats() {
+        return new GitHubCopilotSeatsSearchBuilder(root, this);
+    }
+
+    public GitHubCopilotSeatPagedSearchIterable<GitHubCopilotSeat> listAllSeats(int pageSize, int pageOffset)
+            throws IOException {
+        return searchCopilotSeats().list().withPageSize(pageSize).withPageOffset(pageOffset);
     }
 
     public void deleteSCIMGroup(String scimGroupId) throws IOException {

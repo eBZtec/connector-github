@@ -32,12 +32,14 @@ public class GitHubEMUSchema extends AbstractGitHubSchema<GitHubEMUConfiguration
     public GitHubEMUSchema(GitHubEMUConfiguration configuration, GitHubClient<GitHubEMUSchema> client) {
         super(configuration, client);
 
-        SchemaBuilder schemaBuilder = new SchemaBuilder(GitHubConnector.class);
+        SchemaBuilder schemaBuilder = new SchemaBuilder(GitHubEMUConnector.class);
 
         buildSchema(schemaBuilder, GitHubEMUUserHandler.createSchema(configuration, client).build(),
                 (schema) -> new GitHubEMUUserHandler(configuration, client, this, schema));
         buildSchema(schemaBuilder, GitHubEMUGroupHandler.createSchema(configuration, client).build(),
                 (schema) -> new GitHubEMUGroupHandler(configuration, client, this, schema));
+        buildSchema(schemaBuilder, GitHubCopilotSeatHandler.createSchema(configuration, client).build(),
+                (schema) -> new GitHubCopilotSeatHandler(configuration, client, this, schema));
 
         // Define operation options
         schemaBuilder.defineOperationOption(OperationOptionInfoBuilder.buildAttributesToGet(), SearchOp.class);

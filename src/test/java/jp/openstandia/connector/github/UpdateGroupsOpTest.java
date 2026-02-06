@@ -4,22 +4,23 @@ import jp.openstandia.connector.github.testutil.AbstractEMUTest;
 import org.identityconnectors.framework.api.ConnectorFacade;
 import org.identityconnectors.framework.common.objects.*;
 import org.identityconnectors.framework.common.objects.filter.EqualsFilter;
-import org.testng.AssertJUnit;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
 import static jp.openstandia.connector.github.GitHubEMUGroupHandler.GROUP_OBJECT_CLASS;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class UpdateGroupsOpTest extends AbstractEMUTest {
+class UpdateGroupsOpTest extends AbstractEMUTest {
 
     String userUid = "";
     String groupUidToUpdate = "";
 
     @Test()
-    public void shouldAddUserToGroup() {
+    void shouldAddUserToGroup() {
         // Create an AttributeDelta to add user uid
         Set<AttributeDelta> attributes = new HashSet<>();
         AttributeDeltaBuilder deltaBuilder = new AttributeDeltaBuilder();
@@ -38,18 +39,18 @@ public class UpdateGroupsOpTest extends AbstractEMUTest {
 
         facade.search(GROUP_OBJECT_CLASS, filter, handler, null);
         List<ConnectorObject> objects =  handler.getObjects();
-        AssertJUnit.assertEquals(1, objects.size());
+        assertEquals(1, objects.size());
 
         ConnectorObject object = objects.get(0);
         Attribute memberOfAttr = object.getAttributeByName("members.User.value");
-        AssertJUnit.assertNotNull(memberOfAttr);
+        assertNotNull(memberOfAttr);
 
         List<Object> grupos = memberOfAttr.getValue();
-        AssertJUnit.assertTrue(grupos.contains(userUid));
+        assertTrue(grupos.contains(userUid));
     }
 
     @Test()
-    public void shouldRemoveUserFromGroup() {
+    void shouldRemoveUserFromGroup() {
         // Create an AttributeDelta to add user uid
         Set<AttributeDelta> attributes = new HashSet<>();
         AttributeDeltaBuilder deltaBuilder = new AttributeDeltaBuilder();
@@ -68,13 +69,13 @@ public class UpdateGroupsOpTest extends AbstractEMUTest {
 
         facade.search(GROUP_OBJECT_CLASS, filter, handler, null);
         List<ConnectorObject> objects =  handler.getObjects();
-        AssertJUnit.assertEquals(1, objects.size());
+        assertEquals(1, objects.size());
 
         ConnectorObject object = objects.get(0);
         Attribute memberOfAttr = object.getAttributeByName("members.User.value");
-        AssertJUnit.assertNotNull(memberOfAttr);
+        assertNotNull(memberOfAttr);
 
         List<Object> grupos = memberOfAttr.getValue();
-        AssertJUnit.assertFalse(grupos.contains(userUid));
+        assertFalse(grupos.contains(userUid));
     }
 }

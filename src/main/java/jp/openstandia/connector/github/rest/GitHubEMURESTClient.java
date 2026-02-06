@@ -26,7 +26,7 @@ import org.identityconnectors.framework.common.objects.Name;
 import org.identityconnectors.framework.common.objects.OperationOptions;
 import org.identityconnectors.framework.common.objects.Uid;
 import org.kohsuke.github.*;
-import org.kohsuke.github.extras.okhttp3.OkHttpConnector;
+import org.kohsuke.github.extras.okhttp3.*;
 
 import java.io.IOException;
 import java.util.List;
@@ -48,15 +48,11 @@ public class GitHubEMURESTClient implements GitHubClient<GitHubEMUSchema> {
     private String instanceName;
     private GitHubExt apiClient;
     private long lastAuthenticated;
-    private GHEnterpriseExt enterpriseApiClient;
+    GHEnterpriseExt enterpriseApiClient;
 
     public GitHubEMURESTClient(GitHubEMUConfiguration configuration) {
         this.configuration = configuration;
         auth();
-    }
-
-    public GitHubExt getApiClient() {
-        return apiClient;
     }
 
     @Override

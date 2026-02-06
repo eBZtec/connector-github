@@ -10,13 +10,14 @@ import java.util.Iterator;
  * @author Nikolas Correa
  */
 public class GitHubCopilotSeatPagedSearchIterable<T> extends PagedIterable<T> {
-    private final transient GitHub root;
+    private final GitHub root;
 
     private final GitHubRequest request;
 
     private final Class<? extends GitHubCopilotSeatsSearchResult<T>> receiverType;
 
-    private GitHubCopilotSeatsSearchResult<T> result;
+    GitHubCopilotSeatsSearchResult<T> result;
+
     private int pageOffset;
 
     public GitHubCopilotSeatPagedSearchIterable(GitHub root, GitHubRequest request, Class<? extends GitHubCopilotSeatsSearchResult<T>> receiverType) {
@@ -40,7 +41,7 @@ public class GitHubCopilotSeatPagedSearchIterable<T> extends PagedIterable<T> {
         return result.total_seats;
     }
 
-    private void populate() {
+    public void populate() {
         if (result == null)
             iterator().hasNext();  // dispara a carga inicial
     }
@@ -52,7 +53,7 @@ public class GitHubCopilotSeatPagedSearchIterable<T> extends PagedIterable<T> {
         return new PagedIterator<>(adapter, null);
     }
 
-    protected Iterator<T[]> adapt(final Iterator<? extends GitHubCopilotSeatsSearchResult<T>> base) {
+    public Iterator<T[]> adapt(final Iterator<? extends GitHubCopilotSeatsSearchResult<T>> base) {
         return new Iterator<T[]>() {
             public boolean hasNext() {
                 return base.hasNext();

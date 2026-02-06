@@ -250,10 +250,6 @@ public class SchemaDefinition {
                     .collect(Collectors.toMap(a -> a.connectorName, a -> a));
             return map;
         }
-
-        public void addEnable() {
-
-        }
     }
 
     private final ObjectClass objectClass;

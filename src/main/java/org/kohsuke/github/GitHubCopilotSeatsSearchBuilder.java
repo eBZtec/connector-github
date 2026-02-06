@@ -14,7 +14,7 @@ import java.util.Map;
 public class GitHubCopilotSeatsSearchBuilder extends GHQueryBuilder<GitHubCopilotSeat> {
     protected final Map<String, String> filter = new HashMap<>();
 
-    private final Class<? extends GitHubCopilotSeatsSearchResult<GitHubCopilotSeat>> receiverType;
+    final Class<? extends GitHubCopilotSeatsSearchResult<GitHubCopilotSeat>> receiverType;
 
     protected final GHEnterpriseExt enterprise;
 

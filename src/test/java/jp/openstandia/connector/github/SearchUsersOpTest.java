@@ -4,30 +4,31 @@ import jp.openstandia.connector.github.testutil.AbstractEMUTest;
 import org.identityconnectors.framework.api.ConnectorFacade;
 import org.identityconnectors.framework.common.objects.*;
 import org.identityconnectors.framework.common.objects.filter.EqualsFilter;
-import org.testng.AssertJUnit;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.List;
 
 import static jp.openstandia.connector.github.GitHubEMUUserHandler.USER_OBJECT_CLASS;
 
-public class SearchUsersOpTest extends AbstractEMUTest {
+class SearchUsersOpTest extends AbstractEMUTest {
 
     String userUid = "";
     String userName = "";
 
     @Test()
-    public void shouldReturnAllUsers() {
+    void shouldReturnAllUsers() {
         ConnectorFacade facade = newFacade();
         ListResultHandler handler = new ListResultHandler();
 
         facade.search(USER_OBJECT_CLASS, null, handler, null);
         List<ConnectorObject> objects = handler.getObjects();
-        AssertJUnit.assertTrue("Size: " + objects.size(), objects.size() > 1);
+        assertTrue(objects.size() > 1, "Size: " + objects.size());
     }
 
     @Test()
-    public void shouldReturnUserByUid()  {
+    void shouldReturnUserByUid()  {
         ConnectorFacade facade = newFacade();
         ListResultHandler handler = new ListResultHandler();
 
@@ -36,11 +37,11 @@ public class SearchUsersOpTest extends AbstractEMUTest {
 
         facade.search(USER_OBJECT_CLASS, filter, handler, null);
         List<ConnectorObject> objects = handler.getObjects();
-        AssertJUnit.assertEquals(1, objects.size());
+        assertEquals(1, objects.size());
     }
 
     @Test()
-    public void shouldReturnUserByUsername() {
+    void shouldReturnUserByUsername() {
         ConnectorFacade facade = newFacade();
         ListResultHandler handler = new ListResultHandler();
 
@@ -49,6 +50,6 @@ public class SearchUsersOpTest extends AbstractEMUTest {
 
         facade.search(USER_OBJECT_CLASS, filter, handler, null);
         List<ConnectorObject> objects = handler.getObjects();
-        AssertJUnit.assertEquals(1, objects.size());
+        assertEquals(1, objects.size());
     }
 }

@@ -17,12 +17,8 @@ package jp.openstandia.connector.github;
 
 import jp.openstandia.connector.github.rest.GitHubEMURESTClient;
 import org.identityconnectors.common.logging.Log;
-import org.identityconnectors.framework.common.exceptions.InvalidAttributeValueException;
-import org.identityconnectors.framework.common.objects.ObjectClass;
 import org.identityconnectors.framework.spi.ConnectorClass;
 
-import static jp.openstandia.connector.github.GitHubEMUGroupHandler.GROUP_OBJECT_CLASS;
-import static jp.openstandia.connector.github.GitHubUserHandler.USER_OBJECT_CLASS;
 
 /**
  * Connector implementation for GitHub EMU connector.

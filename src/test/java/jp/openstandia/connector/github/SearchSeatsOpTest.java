@@ -4,30 +4,29 @@ import jp.openstandia.connector.github.testutil.AbstractEMUTest;
 import org.identityconnectors.framework.api.ConnectorFacade;
 import org.identityconnectors.framework.common.objects.*;
 import org.identityconnectors.framework.common.objects.filter.EqualsFilter;
-import org.testng.AssertJUnit;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
+import static jp.openstandia.connector.github.GitHubCopilotSeatHandler.SEAT_OBJECT_CLASS;
 
 import java.util.List;
 
-import static jp.openstandia.connector.github.GitHubCopilotSeatHandler.SEAT_OBJECT_CLASS;
-
-public class SearchSeatsOpTest extends AbstractEMUTest {
+class SearchSeatsOpTest extends AbstractEMUTest {
 
     String seatUid = "";
     String seatName = "";
 
     @Test()
-    public void shouldReturnAllSeats()  {
+    void shouldReturnAllSeats()  {
         ConnectorFacade facade = newFacade();
         ListResultHandler handler = new ListResultHandler();
 
         facade.search(SEAT_OBJECT_CLASS, null, handler, null);
         List<ConnectorObject> objects = handler.getObjects();
-        AssertJUnit.assertTrue("Size: " + objects.size(), objects.size() > 1);
+        assertTrue(objects.size() > 1, "Size: " + objects.size());
     }
 
     @Test()
-    public void shouldReturnSeatByUid()  {
+    void shouldReturnSeatByUid()  {
         ConnectorFacade facade = newFacade();
         ListResultHandler handler = new ListResultHandler();
 
@@ -36,11 +35,11 @@ public class SearchSeatsOpTest extends AbstractEMUTest {
 
         facade.search(SEAT_OBJECT_CLASS, filter, handler, null);
         List<ConnectorObject> objects = handler.getObjects();
-        AssertJUnit.assertEquals(1, objects.size());
+        assertEquals(1, objects.size());
     }
 
     @Test()
-    public void shouldReturnSeatByName()  {
+    void shouldReturnSeatByName()  {
         ConnectorFacade facade = newFacade();
         ListResultHandler handler = new ListResultHandler();
 
@@ -49,6 +48,6 @@ public class SearchSeatsOpTest extends AbstractEMUTest {
 
         facade.search(SEAT_OBJECT_CLASS, filter, handler, null);
         List<ConnectorObject> objects = handler.getObjects();
-        AssertJUnit.assertEquals(1, objects.size());
+        assertEquals(1, objects.size());
     }
 }

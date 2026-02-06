@@ -23,7 +23,6 @@ import org.identityconnectors.framework.api.ConnectorFacade;
 import org.identityconnectors.framework.api.ConnectorFacadeFactory;
 import org.identityconnectors.test.common.TestHelpers;
 import org.junit.jupiter.api.BeforeEach;
-import org.testng.annotations.Test;
 
 public abstract class AbstractEMUTest {
 
@@ -34,7 +33,7 @@ public abstract class AbstractEMUTest {
         GitHubEMUConfiguration conf = new GitHubEMUConfiguration();
         conf.setEnterpriseSlug("");
         conf.setAccessToken(new GuardedString("".toCharArray()));
-        conf.setEndpointURL("");
+        conf.setEndpointURL("https://api.github.com");
         return conf;
     }
 

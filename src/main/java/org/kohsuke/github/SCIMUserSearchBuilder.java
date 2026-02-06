@@ -7,7 +7,7 @@ package org.kohsuke.github;
  */
 public class SCIMUserSearchBuilder extends SCIMSearchBuilder<SCIMUser> {
 
-    SCIMUserSearchBuilder(GitHub root, GHOrganization org) {
+    public SCIMUserSearchBuilder(GitHub root, GHOrganization org) {
         super(root, org, SCIMUserSearchResult.class);
     }
 
@@ -15,7 +15,7 @@ public class SCIMUserSearchBuilder extends SCIMSearchBuilder<SCIMUser> {
     }
 
     @Override
-    protected String getApiUrl() {
+    public String getApiUrl() {
         return String.format("/scim/v2/organizations/%s/Users", organization.login);
     }
 }

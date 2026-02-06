@@ -105,7 +105,7 @@ public abstract class AbstractGitHubConnector<T extends AbstractGitHubConfigurat
         if (handler == null) {
             throw new InvalidAttributeValueException("Unsupported object class " + objectClass);
         }
-       
+
         handler.setInstanceName(instanceName);
 
         return handler;

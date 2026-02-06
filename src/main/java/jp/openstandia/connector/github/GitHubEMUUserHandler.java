@@ -21,6 +21,7 @@ import org.identityconnectors.framework.common.objects.*;
 import org.kohsuke.github.*;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Set;
 import java.util.stream.Stream;
 
@@ -55,7 +56,7 @@ public class GitHubEMUUserHandler extends AbstractGitHubEMUHandler {
         sb.addUid("userId",
                 SchemaDefinition.Types.UUID,
                 null,
-                (source) -> source.id,
+                source -> source.id,
                 "id",
                 NOT_CREATABLE, NOT_UPDATEABLE
         );
@@ -66,7 +67,7 @@ public class GitHubEMUUserHandler extends AbstractGitHubEMUHandler {
                 SchemaDefinition.Types.STRING_CASE_IGNORE,
                 (source, dest) -> dest.userName = source,
                 (source, dest) -> dest.replace("userName", source),
-                (source) -> source.userName,
+                source -> source.userName,
                 null,
                 REQUIRED
         );
@@ -76,28 +77,24 @@ public class GitHubEMUUserHandler extends AbstractGitHubEMUHandler {
                 SchemaDefinition.Types.BOOLEAN,
                 (source, dest) -> dest.active = source,
                 (source, dest) -> dest.replace("active", source),
-                (source) -> source.active,
+                source -> source.active,
                 "active"
         );
 
         // Attributes
         sb.add("externalId",
                 SchemaDefinition.Types.STRING,
-                (source, dest) -> {
-                    dest.externalId = source;
-                },
+                (source, dest) -> dest.externalId = source,
                 (source, dest) -> dest.replace("externalId", source),
-                (source) -> source.externalId,
+                source -> source.externalId,
                 null,
                 REQUIRED
         );
         sb.add("displayName",
                 SchemaDefinition.Types.STRING,
-                (source, dest) -> {
-                    dest.displayName = source;
-                },
+                (source, dest) -> dest.displayName = source,
                 (source, dest) -> dest.replace("displayName", source),
-                (source) -> source.displayName,
+                source -> source.displayName,
                 null
         );
         sb.add("name.formatted",
@@ -109,7 +106,7 @@ public class GitHubEMUUserHandler extends AbstractGitHubEMUHandler {
                     dest.name.formatted = source;
                 },
                 (source, dest) -> dest.replace("name.formatted", source),
-                (source) -> source.name != null ? source.name.formatted : null,
+                source -> source.name != null ? source.name.formatted : null,
                 null
         );
         sb.add("name.givenName",
@@ -121,7 +118,7 @@ public class GitHubEMUUserHandler extends AbstractGitHubEMUHandler {
                     dest.name.givenName = source;
                 },
                 (source, dest) -> dest.replace("name.givenName", source),
-                (source) -> source.name != null ? source.name.givenName : null,
+                source -> source.name != null ? source.name.givenName : null,
                 null
         );
         sb.add("name.familyName",
@@ -133,7 +130,7 @@ public class GitHubEMUUserHandler extends AbstractGitHubEMUHandler {
                     dest.name.familyName = source;
                 },
                 (source, dest) -> dest.replace("name.familyName", source),
-                (source) -> source.name != null ? source.name.familyName : null,
+                source -> source.name != null ? source.name.familyName : null,
                 null
         );
         // SCIM schema has "emails", but we define "primaryEmail" as single value here for easy mapping in IDM
@@ -161,7 +158,7 @@ public class GitHubEMUUserHandler extends AbstractGitHubEMUHandler {
                     newEmail.primary = true;
                     dest.replace(newEmail);
                 },
-                (source) -> source.emails != null && !source.emails.isEmpty() ? source.emails.get(0).value : null,
+                source -> source.emails != null && !source.emails.isEmpty() ? source.emails.get(0).value : null,
                 null,
                 REQUIRED
         );
@@ -190,7 +187,7 @@ public class GitHubEMUUserHandler extends AbstractGitHubEMUHandler {
                     newRole.primary = true;
                     dest.replace(newRole);
                 },
-                (source) -> source.roles != null && !source.roles.isEmpty() ? source.roles.get(0).value : null,
+                source -> source.roles != null && !source.roles.isEmpty() ? source.roles.get(0).value : null,
                 null
         );
 
@@ -201,7 +198,7 @@ public class GitHubEMUUserHandler extends AbstractGitHubEMUHandler {
                 null,
                 null,
                 null,
-                (source) -> source.groups != null ? source.groups.stream().filter(x -> x.ref.contains("/Groups/")).map(x -> x.value) : Stream.empty(),
+                source -> source.groups != null ? source.groups.stream().filter(x -> x.ref.contains("/Groups/")).map(x -> x.value) : Stream.empty(),
                 null,
                 NOT_CREATABLE, NOT_UPDATEABLE, NOT_RETURNED_BY_DEFAULT
         );
@@ -210,14 +207,14 @@ public class GitHubEMUUserHandler extends AbstractGitHubEMUHandler {
         sb.add("meta.created",
                 SchemaDefinition.Types.DATETIME,
                 null,
-                (source) -> source.meta != null ? toZoneDateTimeForISO8601OffsetDateTime(source.meta.created) : null,
+                source -> source.meta != null ? toZoneDateTimeForISO8601OffsetDateTime(source.meta.created) : null,
                 null,
                 NOT_CREATABLE, NOT_UPDATEABLE
         );
         sb.add("meta.lastModified",
                 SchemaDefinition.Types.DATETIME,
                 null,
-                (source) -> source.meta != null ? toZoneDateTimeForISO8601OffsetDateTime(source.meta.lastModified) : null,
+                source -> source.meta != null ? toZoneDateTimeForISO8601OffsetDateTime(source.meta.lastModified) : null,
                 null,
                 NOT_CREATABLE, NOT_UPDATEABLE
         );
@@ -232,9 +229,7 @@ public class GitHubEMUUserHandler extends AbstractGitHubEMUHandler {
         SCIMEMUUser user = new SCIMEMUUser();
         SCIMEMUUser mapped = schemaDefinition.apply(attributes, user);
 
-        Uid created = client.createEMUUser(mapped);
-
-        return created;
+        return client.createEMUUser(mapped);
     }
 
     @Override
@@ -247,7 +242,7 @@ public class GitHubEMUUserHandler extends AbstractGitHubEMUHandler {
             client.patchEMUUser(uid, dest);
         }
 
-        return null;
+        return Collections.emptySet();
     }
 
     @Override
@@ -285,7 +280,7 @@ public class GitHubEMUUserHandler extends AbstractGitHubEMUHandler {
     public int getAll(ResultsHandler resultsHandler, OperationOptions options,
                       Set<String> returnAttributesSet, Set<String> fetchFieldsSet,
                       boolean allowPartialAttributeValues, int pageSize, int pageOffset) {
-        return client.getEMUUsers((u) -> resultsHandler.handle(toConnectorObject(schemaDefinition, u, returnAttributesSet, allowPartialAttributeValues)),
+        return client.getEMUUsers(u -> resultsHandler.handle(toConnectorObject(schemaDefinition, u, returnAttributesSet, allowPartialAttributeValues)),
                 options, fetchFieldsSet, pageSize, pageOffset);
     }
 }

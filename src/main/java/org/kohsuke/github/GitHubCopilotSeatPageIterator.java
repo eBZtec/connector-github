@@ -28,7 +28,7 @@ public class GitHubCopilotSeatPageIterator<T extends GitHubCopilotSeatsSearchRes
 
     private GitHubResponse<T> finalResponse = null;
 
-    private GitHubCopilotSeatPageIterator(GitHubClient client, Class<T> type, GitHubRequest request) {
+    GitHubCopilotSeatPageIterator(GitHubClient client, Class<T> type, GitHubRequest request) {
         if (!"GET".equals(request.method())) {
             throw new IllegalStateException("Request method \"GET\" is required for page iterator.");
         }
@@ -94,7 +94,7 @@ public class GitHubCopilotSeatPageIterator<T extends GitHubCopilotSeatsSearchRes
         }
     }
 
-    private GitHubRequest findNextURL(GitHubResponse<T> response) {
+    GitHubRequest findNextURL(GitHubResponse<T> response) {
         String linkHeader = response.headerField("Link");
         if (linkHeader == null) return null;
 

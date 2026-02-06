@@ -42,19 +42,6 @@ public class GitHubExt extends GitHub {
     }
 
     /**
-     * Returns extension version of the GHOrganization.
-     *
-     * @param name GitHub organization name
-     * @return GitHub organization object
-     * @throws IOException the io exception
-     */
-    @Override
-    public GHOrganizationExt getOrganization(String name) throws IOException {
-        GHOrganizationExt o = createRequest().withUrlPath("/orgs/" + name).fetch(GHOrganizationExt.class).wrapUp(this);
-        return o;
-    }
-
-    /**
      * Returns GHEnterprise..
      *
      * @param name GitHub enterprise slug

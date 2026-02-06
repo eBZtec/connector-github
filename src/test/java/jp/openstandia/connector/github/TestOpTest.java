@@ -2,13 +2,14 @@ package jp.openstandia.connector.github;
 
 import jp.openstandia.connector.github.testutil.AbstractEMUTest;
 import org.identityconnectors.framework.api.ConnectorFacade;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
-public class TestOpTest extends AbstractEMUTest {
+class TestOpTest extends AbstractEMUTest {
 
     @Test()
-    public void shouldInitializeConnection() {
+    void shouldInitializeConnection() {
         ConnectorFacade facade = newFacade();
         facade.test();
     }
 }
+

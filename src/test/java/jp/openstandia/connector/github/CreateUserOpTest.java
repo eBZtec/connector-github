@@ -3,15 +3,15 @@ package jp.openstandia.connector.github;
 import jp.openstandia.connector.github.testutil.AbstractEMUTest;
 import org.identityconnectors.framework.api.ConnectorFacade;
 import org.identityconnectors.framework.common.objects.*;
-import org.testng.AssertJUnit;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.HashSet;
 import java.util.Set;
 
 import static jp.openstandia.connector.github.GitHubEMUUserHandler.USER_OBJECT_CLASS;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-public class CreateUserOpTest extends AbstractEMUTest {
+class CreateUserOpTest extends AbstractEMUTest {
 
     private Set<Attribute> userEntry() {
 
@@ -26,9 +26,9 @@ public class CreateUserOpTest extends AbstractEMUTest {
     }
 
     @Test()
-    public void shouldCreateOrReturnExistentUser() {
+    void shouldCreateOrReturnExistentUser() {
         ConnectorFacade facade = newFacade();
         Uid uid = facade.create(USER_OBJECT_CLASS, userEntry(), null);
-        AssertJUnit.assertNotNull(uid);
+        assertNotNull(uid);
     }
 }

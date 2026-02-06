@@ -25,7 +25,7 @@ public class SCIMPageIterator<T extends SCIMSearchResult> implements Iterator<T>
 
     private GitHubResponse<T> finalResponse = null;
 
-    private SCIMPageIterator(GitHubClient client, Class<T> type, GitHubRequest request) {
+    SCIMPageIterator(GitHubClient client, Class<T> type, GitHubRequest request) {
         if (!"GET".equals(request.method())) {
             throw new IllegalStateException("Request method \"GET\" is required for page iterator.");
         }
@@ -36,7 +36,6 @@ public class SCIMPageIterator<T extends SCIMSearchResult> implements Iterator<T>
     }
 
     static <T extends SCIMSearchResult> SCIMPageIterator<T> create(GitHubClient client, Class<T> type, GitHubRequest request, int pageSize, int pageOffset) {
-
         try {
             if (pageSize > 0) {
                 GitHubRequest.Builder<?> builder = request.toBuilder().with("count", pageSize);
@@ -97,7 +96,7 @@ public class SCIMPageIterator<T extends SCIMSearchResult> implements Iterator<T>
         }
     }
 
-    private GitHubRequest findNextURL(GitHubResponse<T> nextResponse) throws MalformedURLException {
+    GitHubRequest findNextURL(GitHubResponse<T> nextResponse) throws MalformedURLException {
         T res = nextResponse.body();
         long endIndex = res.startIndex + res.itemsPerPage;
         if (endIndex > res.totalResults) {

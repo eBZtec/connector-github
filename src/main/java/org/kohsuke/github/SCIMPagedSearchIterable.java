@@ -18,7 +18,7 @@ public class SCIMPagedSearchIterable<T> extends PagedIterable<T> {
     /**
      * As soon as we have any result fetched, it's set here so that we can report the total count.
      */
-    private SCIMSearchResult<T> result;
+    SCIMSearchResult<T> result;
     
     private int pageOffset;
 
@@ -58,7 +58,7 @@ public class SCIMPagedSearchIterable<T> extends PagedIterable<T> {
         return result.totalResults <= result.startIndex + result.itemsPerPage;
     }
 
-    private void populate() {
+    void populate() {
         if (result == null)
             iterator().hasNext();
     }

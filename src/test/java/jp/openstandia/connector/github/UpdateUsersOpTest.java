@@ -4,8 +4,9 @@ import jp.openstandia.connector.github.testutil.AbstractEMUTest;
 import org.identityconnectors.framework.api.ConnectorFacade;
 import org.identityconnectors.framework.common.objects.*;
 import org.identityconnectors.framework.common.objects.filter.EqualsFilter;
-import org.testng.AssertJUnit;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.HashSet;
 import java.util.List;
@@ -13,14 +14,14 @@ import java.util.Set;
 
 import static jp.openstandia.connector.github.GitHubEMUUserHandler.USER_OBJECT_CLASS;
 
-public class UpdateUsersOpTest extends AbstractEMUTest {
+class UpdateUsersOpTest extends AbstractEMUTest {
 
     String userUid = "";
     String attrToUpdate = "";
     String attrNewValue = "";
 
     @Test()
-    public void shouldActivateUser() {
+    void shouldActivateUser() {
         Set<AttributeDelta> attributes = new HashSet<>();
 
         AttributeDeltaBuilder deltaBuilder = new AttributeDeltaBuilder();
@@ -37,11 +38,11 @@ public class UpdateUsersOpTest extends AbstractEMUTest {
 
         facade.search(USER_OBJECT_CLASS, filter, handler, null);
         List<ConnectorObject> objects =  handler.getObjects();
-        AssertJUnit.assertEquals(1, objects.size());
+        assertEquals(1, objects.size());
     }
 
     @Test()
-    public void shouldInactivateUser() {
+    void shouldInactivateUser() {
         Set<AttributeDelta> attributes = new HashSet<>();
 
         AttributeDeltaBuilder deltaBuilder = new AttributeDeltaBuilder();
@@ -58,11 +59,11 @@ public class UpdateUsersOpTest extends AbstractEMUTest {
 
         facade.search(USER_OBJECT_CLASS, filter, handler, null);
         List<ConnectorObject> objects =  handler.getObjects();
-        AssertJUnit.assertEquals(1, objects.size());
+        assertEquals(1, objects.size());
     }
 
     @Test()
-    public void shouldUpdateAttrValue() {
+    void shouldUpdateAttrValue() {
         ConnectorFacade facade = newFacade();
 
         // Create an AttributeDelta to update the status of uid
@@ -82,11 +83,11 @@ public class UpdateUsersOpTest extends AbstractEMUTest {
 
         facade.search(USER_OBJECT_CLASS, filter, handler, null);
         List<ConnectorObject> objects =  handler.getObjects();
-        AssertJUnit.assertEquals(1, objects.size());
+        assertEquals(1, objects.size());
 
         ConnectorObject object = objects.get(0);
         Attribute nameAttr = object.getAttributeByName(attrToUpdate);
-        AssertJUnit.assertNotNull(nameAttr);
-        AssertJUnit.assertEquals(attrNewValue, nameAttr.getValue().get(0));
+        assertNotNull(nameAttr);
+        assertEquals(attrNewValue, nameAttr.getValue().get(0));
     }
 }

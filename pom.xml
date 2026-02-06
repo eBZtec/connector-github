@@ -6,8 +6,7 @@
     <parent>
         <artifactId>connector-parent</artifactId>
         <groupId>com.evolveum.polygon</groupId>
-        <version>1.5.0.0</version>
-        <relativePath></relativePath>
+        <version>1.5.2.0</version>
     </parent>
 
     <groupId>jp.openstandia.connector</groupId>
@@ -49,6 +48,10 @@
     <properties>
         <connectorPackage>jp.openstandia.connector.github</connectorPackage>
         <connectorClass>GitHubConnector</connectorClass>
+        <jacoco.plugin.version>0.8.13</jacoco.plugin.version>
+        <junit.version>5.13.4</junit.version>
+        <maven.surefire.plugin.version>3.2.5</maven.surefire.plugin.version>
+
     </properties>
 
     <repositories>
@@ -73,10 +76,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <configuration>
-                    <source>9</source>
-                    <target>9</target>
-                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -157,6 +156,46 @@
                     </execution>
                 </executions>
             </plugin>
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>${jacoco.plugin.version}</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>report</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>check</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <rule>
+                                    <element>BUNDLE</element>
+                                    <limits>
+                                        <limit>
+                                            <counter>LINE</counter>
+                                            <value>COVEREDRATIO</value>
+                                            <minimum>0.90</minimum>
+                                        </limit>
+                                    </limits>
+                                </rule>
+                            </rules>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
 
@@ -165,10 +204,22 @@
 
     <dependencies>
         <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>${junit.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>org.kohsuke</groupId>
             <artifactId>github-api</artifactId>
             <version>1.122</version>
             <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <version>5.20.0</version>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>io.jsonwebtoken</groupId>
@@ -210,173 +261,163 @@
         </dependency>
     </dependencies>
 
-    <profiles>
-        <profile>
-            <id>midpoint48</id>
-            <dependencies>
-                <dependency>
-                    <groupId>com.evolveum.midpoint.gui</groupId>
-                    <artifactId>admin-gui</artifactId>
-                    <version>4.8.4</version>
-                    <scope>provided</scope>
-                </dependency>
-                <!--
-                    Spring Boot 3.3.2 uses logback version 1.5.6
-                    https://repo1.maven.org/maven2/org/springframework/boot/spring-boot-dependencies/3.3.2/spring-boot-dependencies-3.3.2.pom
-                -->
-                <dependency>
-                    <groupId>ch.qos.logback</groupId>
-                    <artifactId>logback-classic</artifactId>
-                    <version>1.5.6</version>
-                    <scope>provided</scope>
-                </dependency>
-                <dependency>
-                    <groupId>ch.qos.logback</groupId>
-                    <artifactId>logback-core</artifactId>
-                    <version>1.5.6</version>
-                    <scope>provided</scope>
-                </dependency>
-                <!--
-                    Spring Boot 3.3.2 uses jackson version 2.17.2
-                    https://repo1.maven.org/maven2/org/springframework/boot/spring-boot-dependencies/3.3.2/spring-boot-dependencies-3.3.2.pom
-                -->
-                <dependency>
-                    <groupId>com.fasterxml.jackson.core</groupId>
-                    <artifactId>jackson-annotations</artifactId>
-                    <version>2.17.2</version>
-                    <scope>provided</scope>
-                </dependency>
-                <dependency>
-                    <groupId>com.fasterxml.jackson.core</groupId>
-                    <artifactId>jackson-databind</artifactId>
-                    <version>2.17.2</version>
-                    <scope>provided</scope>
-                </dependency>
-                <dependency>
-                    <groupId>org.testng</groupId>
-                    <artifactId>testng</artifactId>
-                    <scope>test</scope>
-                    <exclusions>
-                        <exclusion>
-                            <groupId>org.yaml</groupId>
-                            <artifactId>snakeyaml</artifactId>
-                        </exclusion>
-                    </exclusions>
-                </dependency>
-                <dependency>
-                    <groupId>net.tirasa.connid</groupId>
-                    <artifactId>connector-framework</artifactId>
-                    <version>1.5.2.0</version>
-                    <scope>provided</scope>
-                </dependency>
-                <dependency>
-                    <groupId>net.tirasa.connid</groupId>
-                    <artifactId>connector-framework-internal</artifactId>
-                    <version>1.5.2.0</version>
-                    <scope>provided</scope>
-                </dependency>
-            </dependencies>
-        </profile>
-        <profile>
-            <id>midpoint44</id>
-            <dependencies>
-                <dependency>
-                    <groupId>com.evolveum.midpoint.gui</groupId>
-                    <artifactId>admin-gui</artifactId>
-                    <type>jar</type>
-                    <classifier>classes</classifier>
-                    <version>4.4.9</version>
-                    <scope>provided</scope>
-                </dependency>
-                <dependency>
-                    <groupId>org.testng</groupId>
-                    <artifactId>testng</artifactId>
-                    <scope>test</scope>
-                    <exclusions>
-                        <exclusion>
-                            <groupId>org.yaml</groupId>
-                            <artifactId>snakeyaml</artifactId>
-                        </exclusion>
-                    </exclusions>
-                </dependency>
-                <dependency>
-                    <groupId>net.tirasa.connid</groupId>
-                    <artifactId>connector-framework</artifactId>
-                    <version>1.5.1.10</version>
-                    <scope>provided</scope>
-                </dependency>
-                <dependency>
-                    <groupId>net.tirasa.connid</groupId>
-                    <artifactId>connector-framework-internal</artifactId>
-                    <version>1.5.1.10</version>
-                    <scope>provided</scope>
-                </dependency>
-                <dependency>
-                    <groupId>net.tirasa.connid</groupId>
-                    <artifactId>connector-framework-contract</artifactId>
-                    <version>1.5.1.10</version>
-                    <scope>test</scope>
-                </dependency>
-            </dependencies>
-        </profile>
-        <profile>
-            <id>midpoint40</id>
-            <repositories>
-                <repository>
-                    <id>evolveum-nexus-releases</id>
-                    <name>Internal Releases</name>
-                    <url>https://nexus.evolveum.com/nexus/content/repositories/releases/</url>
-                </repository>
-                <repository>
-                    <id>evolveum-nexus-snapshots</id>
-                    <name>Internal Releases</name>
-                    <url>https://nexus.evolveum.com/nexus/content/repositories/snapshots/</url>
-                </repository>
-                <repository>
-                    <!-- Jasper references old http repository which fails with 308. -->
-                    <id>jaspersoft-third-party</id>
-                    <url>https://jaspersoft.jfrog.io/jaspersoft/third-party-ce-artifacts</url>
-                </repository>
-            </repositories>
-            <dependencies>
-                <dependency>
-                    <groupId>com.evolveum.midpoint.gui</groupId>
-                    <artifactId>admin-gui</artifactId>
-                    <type>jar</type>
-                    <classifier>classes</classifier>
-                    <version>4.0.4</version>
-                    <scope>provided</scope>
-                </dependency>
-                <dependency>
-                    <groupId>org.testng</groupId>
-                    <artifactId>testng</artifactId>
-                    <scope>test</scope>
-                    <exclusions>
-                        <exclusion>
-                            <groupId>org.yaml</groupId>
-                            <artifactId>snakeyaml</artifactId>
-                        </exclusion>
-                    </exclusions>
-                </dependency>
-                <dependency>
-                    <groupId>net.tirasa.connid</groupId>
-                    <artifactId>connector-framework</artifactId>
-                    <version>1.5.0.10</version>
-                    <scope>provided</scope>
-                </dependency>
-                <dependency>
-                    <groupId>net.tirasa.connid</groupId>
-                    <artifactId>connector-framework-internal</artifactId>
-                    <version>1.5.0.10</version>
-                    <scope>provided</scope>
-                </dependency>
-                <dependency>
-                    <groupId>net.tirasa.connid</groupId>
-                    <artifactId>connector-framework-contract</artifactId>
-                    <version>1.5.0.10</version>
-                    <scope>test</scope>
-                </dependency>
-            </dependencies>
-        </profile>
-    </profiles>
+<!--    <profiles>-->
+<!--        <profile>-->
+<!--            <id>midpoint48</id>-->
+<!--            <dependencies>-->
+<!--                <dependency>-->
+<!--                    <groupId>com.evolveum.midpoint.gui</groupId>-->
+<!--                    <artifactId>admin-gui</artifactId>-->
+<!--                    <version>4.8.4</version>-->
+<!--                    <scope>provided</scope>-->
+<!--                </dependency>-->
+<!--                &lt;!&ndash;-->
+<!--                    Spring Boot 3.3.2 uses logback version 1.5.6-->
+<!--                    https://repo1.maven.org/maven2/org/springframework/boot/spring-boot-dependencies/3.3.2/spring-boot-dependencies-3.3.2.pom-->
+<!--                &ndash;&gt;-->
+<!--                <dependency>-->
+<!--                    <groupId>ch.qos.logback</groupId>-->
+<!--                    <artifactId>logback-classic</artifactId>-->
+<!--                    <version>1.5.6</version>-->
+<!--                    <scope>provided</scope>-->
+<!--                </dependency>-->
+<!--                <dependency>-->
+<!--                    <groupId>ch.qos.logback</groupId>-->
+<!--                    <artifactId>logback-core</artifactId>-->
+<!--                    <version>1.5.6</version>-->
+<!--                    <scope>provided</scope>-->
+<!--                </dependency>-->
+<!--                &lt;!&ndash;-->
+<!--                    Spring Boot 3.3.2 uses jackson version 2.17.2-->
+<!--                    https://repo1.maven.org/maven2/org/springframework/boot/spring-boot-dependencies/3.3.2/spring-boot-dependencies-3.3.2.pom-->
+<!--                &ndash;&gt;-->
+<!--                <dependency>-->
+<!--                    <groupId>com.fasterxml.jackson.core</groupId>-->
+<!--                    <artifactId>jackson-annotations</artifactId>-->
+<!--                    <version>2.17.2</version>-->
+<!--                    <scope>provided</scope>-->
+<!--                </dependency>-->
+<!--                <dependency>-->
+<!--                    <groupId>com.fasterxml.jackson.core</groupId>-->
+<!--                    <artifactId>jackson-databind</artifactId>-->
+<!--                    <version>2.17.2</version>-->
+<!--                    <scope>provided</scope>-->
+<!--                </dependency>-->
+<!--                <dependency>-->
+<!--                    <groupId>org.testng</groupId>-->
+<!--                    <artifactId>testng</artifactId>-->
+<!--                    <scope>test</scope>-->
+<!--                    <exclusions>-->
+<!--                        <exclusion>-->
+<!--                            <groupId>org.yaml</groupId>-->
+<!--                            <artifactId>snakeyaml</artifactId>-->
+<!--                        </exclusion>-->
+<!--                    </exclusions>-->
+<!--                </dependency>-->
+<!--                <dependency>-->
+<!--                    <groupId>net.tirasa.connid</groupId>-->
+<!--                    <artifactId>connector-framework</artifactId>-->
+<!--                    <version>1.5.2.0</version>-->
+<!--                    <scope>provided</scope>-->
+<!--                </dependency>-->
+<!--                <dependency>-->
+<!--                    <groupId>net.tirasa.connid</groupId>-->
+<!--                    <artifactId>connector-framework-internal</artifactId>-->
+<!--                    <version>1.5.2.0</version>-->
+<!--                    <scope>provided</scope>-->
+<!--                </dependency>-->
+<!--            </dependencies>-->
+<!--        </profile>-->
+<!--        <profile>-->
+<!--            <id>midpoint44</id>-->
+<!--            <dependencies>-->
+<!--                <dependency>-->
+<!--                    <groupId>com.evolveum.midpoint.gui</groupId>-->
+<!--                    <artifactId>admin-gui</artifactId>-->
+<!--                    <type>jar</type>-->
+<!--                    <classifier>classes</classifier>-->
+<!--                    <version>4.4.9</version>-->
+<!--                    <scope>provided</scope>-->
+<!--                </dependency>-->
+
+<!--                <dependency>-->
+<!--                    <groupId>net.tirasa.connid</groupId>-->
+<!--                    <artifactId>connector-framework</artifactId>-->
+<!--                    <version>1.5.1.10</version>-->
+<!--                    <scope>provided</scope>-->
+<!--                </dependency>-->
+<!--                <dependency>-->
+<!--                    <groupId>net.tirasa.connid</groupId>-->
+<!--                    <artifactId>connector-framework-internal</artifactId>-->
+<!--                    <version>1.5.1.10</version>-->
+<!--                    <scope>provided</scope>-->
+<!--                </dependency>-->
+<!--                <dependency>-->
+<!--                    <groupId>net.tirasa.connid</groupId>-->
+<!--                    <artifactId>connector-framework-contract</artifactId>-->
+<!--                    <version>1.5.1.10</version>-->
+<!--                    <scope>test</scope>-->
+<!--                </dependency>-->
+<!--            </dependencies>-->
+<!--        </profile>-->
+<!--        <profile>-->
+<!--            <id>midpoint40</id>-->
+<!--            <repositories>-->
+<!--                <repository>-->
+<!--                    <id>evolveum-nexus-releases</id>-->
+<!--                    <name>Internal Releases</name>-->
+<!--                    <url>https://nexus.evolveum.com/nexus/content/repositories/releases/</url>-->
+<!--                </repository>-->
+<!--                <repository>-->
+<!--                    <id>evolveum-nexus-snapshots</id>-->
+<!--                    <name>Internal Releases</name>-->
+<!--                    <url>https://nexus.evolveum.com/nexus/content/repositories/snapshots/</url>-->
+<!--                </repository>-->
+<!--                <repository>-->
+<!--                    &lt;!&ndash; Jasper references old http repository which fails with 308. &ndash;&gt;-->
+<!--                    <id>jaspersoft-third-party</id>-->
+<!--                    <url>https://jaspersoft.jfrog.io/jaspersoft/third-party-ce-artifacts</url>-->
+<!--                </repository>-->
+<!--            </repositories>-->
+<!--            <dependencies>-->
+<!--                <dependency>-->
+<!--                    <groupId>com.evolveum.midpoint.gui</groupId>-->
+<!--                    <artifactId>admin-gui</artifactId>-->
+<!--                    <type>jar</type>-->
+<!--                    <classifier>classes</classifier>-->
+<!--                    <version>4.0.4</version>-->
+<!--                    <scope>provided</scope>-->
+<!--                </dependency>-->
+<!--                <dependency>-->
+<!--                    <groupId>org.testng</groupId>-->
+<!--                    <artifactId>testng</artifactId>-->
+<!--                    <scope>test</scope>-->
+<!--                    <exclusions>-->
+<!--                        <exclusion>-->
+<!--                            <groupId>org.yaml</groupId>-->
+<!--                            <artifactId>snakeyaml</artifactId>-->
+<!--                        </exclusion>-->
+<!--                    </exclusions>-->
+<!--                </dependency>-->
+<!--                <dependency>-->
+<!--                    <groupId>net.tirasa.connid</groupId>-->
+<!--                    <artifactId>connector-framework</artifactId>-->
+<!--                    <version>1.5.0.10</version>-->
+<!--                    <scope>provided</scope>-->
+<!--                </dependency>-->
+<!--                <dependency>-->
+<!--                    <groupId>net.tirasa.connid</groupId>-->
+<!--                    <artifactId>connector-framework-internal</artifactId>-->
+<!--                    <version>1.5.0.10</version>-->
+<!--                    <scope>provided</scope>-->
+<!--                </dependency>-->
+<!--                <dependency>-->
+<!--                    <groupId>net.tirasa.connid</groupId>-->
+<!--                    <artifactId>connector-framework-contract</artifactId>-->
+<!--                    <version>1.5.0.10</version>-->
+<!--                    <scope>test</scope>-->
+<!--                </dependency>-->
+<!--            </dependencies>-->
+<!--        </profile>-->
+<!--    </profiles>-->
 </project>

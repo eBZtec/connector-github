@@ -160,6 +160,10 @@ public class GHEnterpriseExt extends GHOrganization {
                 .list()
                 .toList();
 
+        if (allSeats.isEmpty()) {
+            return null;
+        }
+
         return allSeats.stream()
                 .filter(seat -> copilotSeatDisplayName.equals(seat.assignee.login))
                 .findFirst()

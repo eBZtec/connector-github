@@ -2,17 +2,12 @@ package util;
 
 import jp.openstandia.connector.util.SchemaDefinition;
 import org.identityconnectors.framework.common.objects.*;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.time.format.DateTimeFormatter;
-import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 
@@ -27,25 +22,20 @@ class SchemaDefinitionTest {
         SchemaDefinition.Builder<String, String, Integer> builder =
                 SchemaDefinition.newBuilder(objectClass, String.class, Integer.class);
 
-        // Assert
         assertNotNull(builder);
     }
 
     @Test
     void testAddUidShouldCreateAndAddAttributeMapper() throws Exception {
-        // Arrange
         ObjectClass objectClass = new ObjectClass("testClass");
 
-        // Cria o builder com tipos genéricos simples
         SchemaDefinition.Builder<String, String, String> builder =
                 new SchemaDefinition.Builder<>(objectClass, String.class, String.class, String.class);
 
-        // Lambdas dummy (só pra satisfazer os parâmetros)
         BiConsumer<String, String> create = (value, obj) -> {};
         BiConsumer<String, String> update = (value, obj) -> {};
         Function<String, String> read = s -> "valor-" + s;
 
-        // Act
         builder.addUid(
                 "uidField",
                 SchemaDefinition.Types.STRING,
@@ -56,8 +46,6 @@ class SchemaDefinitionTest {
                 AttributeInfo.Flags.REQUIRED
         );
 
-        // Assert
-        // Acessa o campo privado 'attributes'
         Field field = builder.getClass().getDeclaredField("attributes");
         field.setAccessible(true);
         @SuppressWarnings("unchecked")
@@ -67,7 +55,6 @@ class SchemaDefinitionTest {
         Object attr = attributes.get(0);
         assertNotNull(attr, "AttributeMapper não deveria ser nulo");
 
-        // Verifica os campos internos via reflexão
         Field connectorNameField = attr.getClass().getDeclaredField("connectorName");
         connectorNameField.setAccessible(true);
         assertEquals("__UID__", connectorNameField.get(attr));
@@ -79,24 +66,18 @@ class SchemaDefinitionTest {
         Field fetchField = attr.getClass().getDeclaredField("fetchField");
         fetchField.setAccessible(true);
         assertEquals("fetchUid", fetchField.get(attr));
-
-        Method isReadableAttributes = builder.getClass().getDeclaredMethod("isReadableAttributes");
     }
 
     @Test
     void testAddNameShouldCreateAndAddAttributeMapper() throws Exception {
-        // Arrange
         ObjectClass objectClass = new ObjectClass("testClass");
 
-        // Cria o builder com tipos genéricos simples
         SchemaDefinition.Builder<String, String, String> builder =
                 new SchemaDefinition.Builder<>(objectClass, String.class, String.class, String.class);
 
-        // Lambdas dummy
         BiConsumer<String, String> createOrUpdate = (value, obj) -> {};
         Function<String, String> read = s -> "name-" + s;
 
-        // Act
         builder.addName(
                 "displayName",
                 SchemaDefinition.Types.STRING,
@@ -106,8 +87,6 @@ class SchemaDefinitionTest {
                 AttributeInfo.Flags.NOT_UPDATEABLE
         );
 
-        // Assert
-        // Acessa o campo privado 'attributes'
         Field field = builder.getClass().getDeclaredField("attributes");
         field.setAccessible(true);
         @SuppressWarnings("unchecked")
@@ -117,17 +96,14 @@ class SchemaDefinitionTest {
         Object attr = attributes.get(0);
         assertNotNull(attr, "AttributeMapper não deveria ser nulo");
 
-        // Verifica se o campo 'connectorName' é __NAME__
         Field connectorNameField = attr.getClass().getDeclaredField("connectorName");
         connectorNameField.setAccessible(true);
         assertEquals(Name.NAME, connectorNameField.get(attr));
 
-        // Verifica o nome do atributo passado
         Field nameField = attr.getClass().getDeclaredField("name");
         nameField.setAccessible(true);
         assertEquals("displayName", nameField.get(attr));
 
-        // Verifica o campo 'fetchField'
         Field fetchField = attr.getClass().getDeclaredField("fetchField");
         fetchField.setAccessible(true);
         assertEquals("fetchName", fetchField.get(attr));
@@ -135,18 +111,15 @@ class SchemaDefinitionTest {
 
     @Test
     void testAddEnableShouldCreateAndAddAttributeMapper() throws Exception {
-        // Arrange
         ObjectClass objectClass = new ObjectClass("testClass");
 
         SchemaDefinition.Builder<String, String, String> builder =
                 new SchemaDefinition.Builder<>(objectClass, String.class, String.class, String.class);
 
-        // Lambdas dummy
         BiConsumer<String, String> create = (value, obj) -> {};
         BiConsumer<String, String> update = (value, obj) -> {};
         Function<String, String> read = s -> "enabled-" + s;
 
-        // Act
         builder.addEnable(
                 "enabledFlag",
                 SchemaDefinition.Types.STRING,
@@ -158,8 +131,6 @@ class SchemaDefinitionTest {
         );
 
 
-        // Assert
-        // Acessa o campo privado 'attributes'
         Field field = builder.getClass().getDeclaredField("attributes");
         field.setAccessible(true);
         @SuppressWarnings("unchecked")
@@ -169,17 +140,14 @@ class SchemaDefinitionTest {
         Object attr = attributes.get(0);
         assertNotNull(attr, "AttributeMapper não deveria ser nulo");
 
-        // Verifica se o campo 'connectorName' é __ENABLE__
         Field connectorNameField = attr.getClass().getDeclaredField("connectorName");
         connectorNameField.setAccessible(true);
         assertEquals(OperationalAttributes.ENABLE_NAME, connectorNameField.get(attr));
 
-        // Verifica o nome do atributo passado
         Field nameField = attr.getClass().getDeclaredField("name");
         nameField.setAccessible(true);
         assertEquals("enabledFlag", nameField.get(attr));
 
-        // Verifica o campo 'fetchField'
         Field fetchField = attr.getClass().getDeclaredField("fetchField");
         fetchField.setAccessible(true);
         assertEquals("fetchEnable", fetchField.get(attr));

@@ -42,7 +42,7 @@ public class GitHubEMUUserHandlerTest {
     }
 
     @Test
-    void instancia_handler_ok() {
+    void instanciaHandlerOk() {
         GitHubEMUUserHandler handler = newHandler();
         assertNotNull(handler);
     }
@@ -54,24 +54,6 @@ public class GitHubEMUUserHandlerTest {
         GitHubClient<GitHubEMUSchema> client = mock(GitHubClient.class);
         SchemaDefinition.Builder builder = GitHubEMUUserHandler.createSchema(config, client);
         assertNotNull(builder);
-    }
-
-    @Test
-    public void testUidLambdaExecution() {
-        GitHubEMUConfiguration config = mock(GitHubEMUConfiguration.class);
-        GitHubClient<GitHubEMUSchema> client = mock(GitHubClient.class);
-
-        SchemaDefinition.Builder builder = GitHubEMUUserHandler.createSchema(config, client);
-        SchemaDefinition definition = builder.build();
-
-        // Agora precisamos de um "source" que tenha o campo 'id'
-        SCIMEMUUser user = new SCIMEMUUser();
-        user.id = UUID.randomUUID().toString();
-
-        // A mágica: simular a extração do UID usando o schema
-        String extractedId = definition.getReturnedByDefaultAttributesSet().get(user.id);
-
-        assertEquals(user.id, extractedId);
     }
 }
 

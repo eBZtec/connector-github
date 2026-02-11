@@ -1,20 +1,18 @@
 package org.kohsuke.github;
+import jp.openstandia.connector.github.*;
 import jp.openstandia.connector.github.GitHubClient;
-import jp.openstandia.connector.github.GitHubEMUConfiguration;
-import jp.openstandia.connector.github.GitHubEMUSchema;
-import jp.openstandia.connector.github.GitHubEMUUserHandler;
 import jp.openstandia.connector.util.SchemaDefinition;
 import org.identityconnectors.framework.common.objects.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.time.OffsetDateTime;
 import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 class GitHubEMUUserHandlerTest {
-
     private GitHubEMUConfiguration config;
     private jp.openstandia.connector.github.GitHubClient<GitHubEMUSchema> client;
     private GitHubEMUSchema schema;
@@ -58,7 +56,7 @@ class GitHubEMUUserHandlerTest {
     }
 
     @Test
-    void testUpdateDelta_withChanges() {
+    void testUpdateDeltaWithChanges() {
         Uid uid = new Uid("abc");
         Set<AttributeDelta> deltas = new HashSet<>();
 
@@ -69,8 +67,7 @@ class GitHubEMUUserHandlerTest {
         });
         when(patchOps.hasAttributesChange()).thenReturn(true);
 
-        // Spy to check call
-        jp.openstandia.connector.github.GitHubClient<GitHubEMUSchema> spyClient = spy(client);
+        jp.openstandia.connector.github.GitHubClient<GitHubEMUSchema> spyClient = client;
         handler = new GitHubEMUUserHandler(config, spyClient, schema, schemaDefinition);
 
         SCIMPatchOperations dest = new SCIMPatchOperations();
@@ -87,13 +84,13 @@ class GitHubEMUUserHandlerTest {
     }
 
     @Test
-    void testUpdateDelta_withoutChanges() {
+    void testUpdateDeltaWithoutChanges() {
         Uid uid = new Uid("abc");
         Set<AttributeDelta> deltas = new HashSet<>();
 
         when(schemaDefinition.applyDelta(eq(deltas), any())).thenAnswer(inv -> null);
 
-        GitHubClient<GitHubEMUSchema> spyClient = spy(client);
+        GitHubClient<GitHubEMUSchema> spyClient = client;
         handler = new GitHubEMUUserHandler(config, spyClient, schema, schemaDefinition);
 
         handler.updateDelta(uid, deltas, new OperationOptionsBuilder().build());
@@ -112,14 +109,15 @@ class GitHubEMUUserHandlerTest {
     }
 
     @Test
-    void testGetByUid_found() {
+    void testGetByUidFound() {
         Uid uid = new Uid("uid-1");
         OperationOptions options = new OperationOptionsBuilder().build();
         ResultsHandler handlerMock = mock(ResultsHandler.class);
 
         SCIMEMUUser user = new SCIMEMUUser();
+
         when(client.getEMUUser(eq(uid), eq(options), any())).thenReturn(user);
-        //when(schemaDefinition.toConnectorObject(any(), anyBoolean(), any())).thenReturn(mock(ConnectorObject.class));
+        when(schemaDefinition.toConnectorObjectBuilder(user, Set.of(), false)).thenReturn(mock(ConnectorObjectBuilder.class));
 
         int result = handler.getByUid(uid, handlerMock, options, Set.of(), Set.of(), false, 0, 0);
 
@@ -149,7 +147,7 @@ class GitHubEMUUserHandlerTest {
 
         SCIMEMUUser user = new SCIMEMUUser();
         when(client.getEMUUser(eq(name), eq(options), any())).thenReturn(user);
-        //when(schemaDefinition.toConnectorObjectBuilder(any(), anyBoolean(), any())).thenReturn(mock(ConnectorObject.class));
+        when(schemaDefinition.toConnectorObjectBuilder(user, Set.of(), false)).thenReturn(mock(ConnectorObjectBuilder.class));
 
         int result = handler.getByName(name, handlerMock, options, Set.of(), Set.of(), false, 0, 0);
 
@@ -180,5 +178,236 @@ class GitHubEMUUserHandlerTest {
 
         assertEquals(3, result);
         verify(client).getEMUUsers(any(), any(), any(), anyInt(), anyInt());
+    }
+
+    @Test
+    void createSchemaShouldBuildSchemaAndMapAllAttributes() {
+        SchemaDefinition.Builder builder =
+                GitHubEMUUserHandler.createSchema(config, client);
+
+        assertNotNull(builder);
+
+        SchemaDefinition schema =
+                builder.build();
+
+        // ---------- CREATE mapping ----------
+        SCIMEMUUser target = new SCIMEMUUser();
+
+        Set<Attribute> attrs = Set.of(
+                AttributeBuilder.build(Name.NAME, "jdoe"),
+                AttributeBuilder.build("externalId", "ext-1"),
+                AttributeBuilder.build("displayName", "John Doe"),
+                AttributeBuilder.build("name.formatted", "John Doe"),
+                AttributeBuilder.build("name.givenName", "John"),
+                AttributeBuilder.build("name.familyName", "Doe"),
+                AttributeBuilder.build("primaryEmail", "john@acme.com"),
+                AttributeBuilder.build("primaryRole", "developer"),
+                AttributeBuilder.buildEnabled(true)
+        );
+
+        SCIMEMUUser mapped = schema.apply(attrs, target);
+
+        assertEquals("jdoe", mapped.userName);
+        assertEquals("ext-1", mapped.externalId);
+        assertEquals("John Doe", mapped.displayName);
+        assertTrue(mapped.active);
+
+        assertNotNull(mapped.name);
+        assertEquals("John Doe", mapped.name.formatted);
+        assertEquals("John", mapped.name.givenName);
+        assertEquals("Doe", mapped.name.familyName);
+
+        assertEquals(1, mapped.emails.size());
+        assertEquals("john@acme.com", mapped.emails.get(0).value);
+        assertTrue(mapped.emails.get(0).primary);
+
+        assertEquals(1, mapped.roles.size());
+        assertEquals("developer", mapped.roles.get(0).value);
+        assertTrue(mapped.roles.get(0).primary);
+
+        // ---------- READ mapping ----------
+        SCIMEMUUser source = new SCIMEMUUser();
+        source.id = "uuid-1";
+        source.userName = "jdoe";
+        source.externalId = "ext-1";
+        source.active = true;
+
+        SCIMName name = new SCIMName();
+        name.formatted = "John Doe";
+        name.givenName = "John";
+        name.familyName = "Doe";
+        source.name = name;
+
+        SCIMEmail email = new SCIMEmail();
+        email.value = "john@acme.com";
+        email.primary = true;
+        source.emails = List.of(email);
+
+        SCIMRole role = new SCIMRole();
+        role.value = "developer";
+        role.primary = true;
+        source.roles = List.of(role);
+
+        SCIMMember group = new SCIMMember();
+        group.ref = "/Groups/123";
+        group.value = "123";
+        source.groups = List.of(group);
+
+        SCIMMeta meta = new SCIMMeta();
+        meta.created = String.valueOf(OffsetDateTime.now());
+        meta.lastModified = String.valueOf(OffsetDateTime.now());
+        source.meta = meta;
+
+        Set<String> attrsToGetSet = new HashSet<>(Set.of());
+        attrsToGetSet.add("primaryEmail");
+        attrsToGetSet.add("primaryRole");
+        attrsToGetSet.add("groups");
+        attrsToGetSet.add("meta.created");
+        attrsToGetSet.add("meta.lastModified");
+
+        ConnectorObject co =
+                handler.toConnectorObject(
+                        schema, source, attrsToGetSet, false
+                );
+
+        assertEquals("uuid-1", co.getUid().getUidValue());
+        assertEquals("jdoe", co.getName().getNameValue());
+
+        assertEquals("john@acme.com",
+                co.getAttributeByName("primaryEmail").getValue().get(0));
+
+        assertEquals("developer",
+                co.getAttributeByName("primaryRole").getValue().get(0));
+
+        assertNotNull(co.getAttributeByName("meta.created"));
+        assertNotNull(co.getAttributeByName("meta.lastModified"));
+    }
+
+    @Test
+    void createSchemaShouldHandleNullEmailAndRoleOnUpdate() {
+        SchemaDefinition.Builder builder =
+                GitHubEMUUserHandler.createSchema(
+                        config,
+                        client
+                );
+
+        SchemaDefinition schema =
+                builder.build();
+
+        SCIMPatchOperations dest = new SCIMPatchOperations();
+
+        Set<AttributeDelta> deltas = Set.of(
+                AttributeDeltaBuilder.build("primaryEmail", ""),
+                AttributeDeltaBuilder.build("primaryRole", "")
+        );
+
+        schema.applyDelta(deltas, dest);
+
+        assertTrue(dest.hasAttributesChange());
+    }
+
+    @Test
+    void applyDeltaShouldCallReplace_forSimpleAttributes() {
+        SchemaDefinition schema = buildSchema();
+        SCIMPatchOperations dest = mock(SCIMPatchOperations.class);
+
+        Set<AttributeDelta> deltas = Set.of(
+                AttributeDeltaBuilder.build(Name.NAME, "newUserName"),
+
+                AttributeDeltaBuilder.build(OperationalAttributes.ENABLE_NAME, true),
+
+                AttributeDeltaBuilder.build("externalId", "ext-123"),
+
+                AttributeDeltaBuilder.build("displayName", "John Doe"),
+
+                AttributeDeltaBuilder.build("name.formatted", "John Doe"),
+                AttributeDeltaBuilder.build("name.givenName", "John"),
+                AttributeDeltaBuilder.build("name.familyName", "Doe")
+        );
+
+        schema.applyDelta(deltas, dest);
+
+        verify(dest).replace(eq("userName"), eq("newUserName"));
+        verify(dest).replace(eq("active"), eq(true));
+        verify(dest).replace(eq("externalId"), eq("ext-123"));
+        verify(dest).replace(eq("displayName"), eq("John Doe"));
+
+        verify(dest).replace(eq("name.formatted"), eq("John Doe"));
+        verify(dest).replace(eq("name.givenName"), eq("John"));
+        verify(dest).replace(eq("name.familyName"), eq("Doe"));
+
+        verifyNoMoreInteractions(dest);
+    }
+
+    private SchemaDefinition buildSchema() {
+        return GitHubEMUUserHandler.createSchema(config, client).build();
+    }
+
+    @Test
+    void applyDeltaShouldCallReplace_withNewPrimaryEmailObjectWhenPrimaryEmailIsNonNull() {
+        SchemaDefinition schema = buildSchema();
+        SCIMPatchOperations dest = mock(SCIMPatchOperations.class);
+
+        Set<AttributeDelta> deltas = Set.of(
+                AttributeDeltaBuilder.build("primaryEmail", "john@acme.com")
+        );
+
+        schema.applyDelta(deltas, dest);
+
+        verify(dest).replace(argThat((SCIMEmail e) ->
+                e != null
+                        && "john@acme.com".equals(e.value)
+                        && Boolean.TRUE.equals(e.primary)
+        ));
+        verifyNoMoreInteractions(dest);
+    }
+
+    @Test
+    void applyDeltaShouldCallReplace_withNullEmailWhenPrimaryEmailIsNull() {
+        SchemaDefinition schema = buildSchema();
+        SCIMPatchOperations dest = mock(SCIMPatchOperations.class);
+
+        Set<AttributeDelta> deltas = Set.of(
+                AttributeDeltaBuilder.build("primaryEmail", (Object) null)
+        );
+
+        schema.applyDelta(deltas, dest);
+
+        verify(dest).replace((SCIMEmail) isNull());
+        verifyNoMoreInteractions(dest);
+    }
+
+    @Test
+    void applyDeltaShouldCallReplaceWithNewPrimaryRoleObjectWhenPrimaryRoleIsNonNull() {
+        SchemaDefinition schema = buildSchema();
+        SCIMPatchOperations dest = mock(SCIMPatchOperations.class);
+
+        Set<AttributeDelta> deltas = Set.of(
+                AttributeDeltaBuilder.build("primaryRole", "developer")
+        );
+
+        schema.applyDelta(deltas, dest);
+
+        verify(dest).replace(argThat((SCIMRole r) ->
+                r != null
+                        && "developer".equals(r.value)
+                        && Boolean.TRUE.equals(r.primary)
+        ));
+        verifyNoMoreInteractions(dest);
+    }
+
+    @Test
+    void applyDeltaShouldCallReplaceWithNullRoleWhenPrimaryRoleIsNull() {
+        SchemaDefinition schema = buildSchema();
+        SCIMPatchOperations dest = mock(SCIMPatchOperations.class);
+
+        Set<AttributeDelta> deltas = Set.of(
+                AttributeDeltaBuilder.build("primaryRole", (Object) null)
+        );
+
+        schema.applyDelta(deltas, dest);
+
+        verify(dest).replace((SCIMRole) isNull());
+        verifyNoMoreInteractions(dest);
     }
 }

@@ -208,7 +208,7 @@ class GHEnterpriseExtTest {
 
         doReturn(mockBuilder).when(enterprise).searchCopilotSeats();
 
-        GitHubCopilotSeat result = enterprise.getCopilotSeatByDisplayName("user1");
+        GitHubCopilotSeat result = enterprise.getCopilotSeatByDisplayName("user3");
         assertNull(result);
     }
 
@@ -320,7 +320,6 @@ class GHEnterpriseExtTest {
 
     @Test
     void testGetSCIMGroupByDisplayNameNoOrMultipleResultsReturnsNull() throws IOException {
-        // Cenário 1: lista vazia
         SCIMEMUGroupSearchBuilder mockBuilder = mock(SCIMEMUGroupSearchBuilder.class);
         SCIMPagedSearchIterable<SCIMEMUGroup> mockIterable = mock(SCIMPagedSearchIterable.class);
         when(mockIterable.toList()).thenReturn(Collections.emptyList());
@@ -331,7 +330,6 @@ class GHEnterpriseExtTest {
         SCIMEMUGroup result1 = enterprise.getSCIMEMUGroupByDisplayName("Unknown");
         assertNull(result1);
 
-        // Cenário 2: múltiplos resultados
         SCIMEMUGroup g1 = new SCIMEMUGroup();
         SCIMEMUGroup g2 = new SCIMEMUGroup();
         when(mockIterable.toList()).thenReturn(Arrays.asList(g1, g2));

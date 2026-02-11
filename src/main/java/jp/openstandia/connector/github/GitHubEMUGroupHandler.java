@@ -117,7 +117,7 @@ public class GitHubEMUGroupHandler extends AbstractGitHubEMUHandler {
                 NOT_CREATABLE, NOT_UPDATEABLE
         );
 
-        LOGGER.ok("The constructed GitHub EMU User schema");
+        LOGGER.ok("The constructed GitHub EMU Group schema");
 
         return sb;
     }

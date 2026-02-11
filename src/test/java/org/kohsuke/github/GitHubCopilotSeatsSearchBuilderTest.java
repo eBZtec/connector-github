@@ -17,9 +17,13 @@ class GitHubCopilotSeatsSearchBuilderTest {
     @BeforeEach
     void setup() {
         mockGitHub = mock(GitHub.class);
-        mockEnterprise = mock(GHEnterpriseExt.class);
-        when(mockEnterprise.getLogin()).thenReturn("test-enterprise");
+        mockEnterprise = spy(new GHEnterpriseExt());
         mockEnterprise.login = "test-enterprise";
+
+        Requester mockRequester = mock(Requester.class, RETURNS_SELF);
+        mockEnterprise.root = mockGitHub;
+
+        when(mockGitHub.createRequest()).thenReturn(mockRequester);
     }
 
     @Test

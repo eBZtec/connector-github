@@ -128,13 +128,7 @@ class SchemaDefinitionTest {
         public List<String> attrListDatetime;
         public String attrDate;
         public String attrDatetime;
-    }
-
-    private String formatDate(ZonedDateTime zonedDateTime) {
-        if (zonedDateTime == null) {
-            return null;
-        }
-        return zonedDateTime.format(DEFAULT_DATE_FORMAT);
+        public String attrJson;
     }
 
     private static SchemaDefinition getSchemaDefinition(Dummy dummy) {
@@ -219,6 +213,14 @@ class SchemaDefinitionTest {
                 "attrDateTime"
         );
 
+        builder.add("attrJson",
+                SchemaDefinition.Types.JSON,
+                (value, obj) -> obj.attrJson = value,
+                (value, obj) -> obj.replace("attrJson", String.valueOf(value)),
+                (source) -> source.attrJson,
+                "attrJson"
+        );
+
         return builder.build();
     }
 
@@ -233,6 +235,7 @@ class SchemaDefinitionTest {
         attributeSet.add(AttributeBuilder.build("attrLong", 20L));
         attributeSet.add(AttributeBuilder.build("attrList", List.of(toZoneDateTime("2023-02-23"))));
         attributeSet.add(AttributeBuilder.build("attrListDatetime", List.of(toZoneDateTime("2023-02-23"))));
+        attributeSet.add(AttributeBuilder.build("attrJson", "{}"));
 
         schemaDefinition.apply(attributeSet, dummy);
 

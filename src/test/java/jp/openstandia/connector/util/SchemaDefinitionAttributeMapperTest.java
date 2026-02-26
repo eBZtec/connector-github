@@ -1,6 +1,5 @@
 package jp.openstandia.connector.util;
 
-import jp.openstandia.connector.util.SchemaDefinition;
 import org.identityconnectors.common.security.GuardedString;
 import org.identityconnectors.framework.common.objects.*;
 import org.identityconnectors.framework.common.objects.Attribute;
@@ -33,7 +32,6 @@ class SchemaDefinitionAttributeMapperTest {
         Source(Object value) { this.value = value; }
     }
 
-    // ---------- isStringType() coverage ----------
     @Test
     void isStringType_shouldReturnTrueForStringish_andFalseForNonStringish() {
         var m1 = new SchemaDefinition.AttributeMapper<>(
@@ -58,7 +56,6 @@ class SchemaDefinitionAttributeMapperTest {
         assertFalse(m3.isStringType());
     }
 
-    // ---------- apply(Attribute, C) coverage (single) ----------
     @Test
     void applyAttribute_single_shouldCoverAllScalarTypeBranches_andNullCreateNoop() {
         // create == null -> early return
@@ -67,7 +64,7 @@ class SchemaDefinitionAttributeMapperTest {
                 null, (String v, UpdateDest d) -> {},
                 (Source s) -> null, null
         );
-        noCreate.apply(AttributeBuilder.build("x", "v"), new CreateDest()); // should not throw
+        noCreate.apply(AttributeBuilder.build("x", "v"), new CreateDest());
 
         // STRING-ish branch uses AttributeUtil.getAsStringValue
         {
@@ -82,7 +79,6 @@ class SchemaDefinitionAttributeMapperTest {
             assertEquals("abc", d.last.get());
         }
 
-        // INTEGER
         {
             CreateDest d = new CreateDest();
             var m = new SchemaDefinition.AttributeMapper<>(
@@ -95,46 +91,6 @@ class SchemaDefinitionAttributeMapperTest {
             assertEquals(7, d.last.get());
         }
 
-//        // LONG
-//        {
-//            CreateDest d = new CreateDest();
-//            var m = new SchemaDefinition.AttributeMapper<>(
-//                    "l", SchemaDefinition.Types.LONG,
-//                    (Long v, CreateDest dest) -> dest.last.set(v),
-//                    (Long v, UpdateDest dest) -> {},
-//                    (Source s) -> null, null
-//            );
-//            m.apply(AttributeBuilder.build("l", 9L), d);
-//            assertEquals(9L, d.last.get());
-//        }
-//
-//        // FLOAT
-//        {
-//            CreateDest d = new CreateDest();
-//            var m = new SchemaDefinition.AttributeMapper<Float, CreateDest, UpdateDest, Source>(
-//                    "f", SchemaDefinition.Types.FLOAT,
-//                    (Float v, CreateDest dest) -> dest.last.set(v),
-//                    (Float v, UpdateDest dest) -> {},
-//                    (Source s) -> null, null
-//            );
-//            m.apply(AttributeBuilder.build("f", 1.25f), d);
-//            assertEquals(1.25f, (Float) d.last.get(), 0.0001);
-//        }
-//
-//        // DOUBLE
-//        {
-//            CreateDest d = new CreateDest();
-//            var m = new SchemaDefinition.AttributeMapper<>(
-//                    "d", SchemaDefinition.Types.DOUBLE,
-//                    (Double v, CreateDest dest) -> dest.last.set(v),
-//                    (Double v, UpdateDest dest) -> {},
-//                    (Source s) -> null, null
-//            );
-//            m.apply(AttributeBuilder.build("d", 2.5d), d);
-//            assertEquals(2.5d, (Double) d.last.get(), 0.0001);
-//        }
-
-        // BOOLEAN
         {
             CreateDest d = new CreateDest();
             var m = new SchemaDefinition.AttributeMapper<>(
@@ -147,7 +103,6 @@ class SchemaDefinitionAttributeMapperTest {
             assertEquals(true, d.last.get());
         }
 
-        // BIG_DECIMAL
         {
             CreateDest d = new CreateDest();
             var m = new SchemaDefinition.AttributeMapper<>(
@@ -160,7 +115,6 @@ class SchemaDefinitionAttributeMapperTest {
             assertEquals(new BigDecimal("12.34"), d.last.get());
         }
 
-        // DATE_STRING branch (formats ZonedDateTime -> String)
         {
             CreateDest d = new CreateDest();
             var m = new SchemaDefinition.AttributeMapper<>(
@@ -172,11 +126,9 @@ class SchemaDefinitionAttributeMapperTest {
 
             ZonedDateTime zdt = ZonedDateTime.of(2026, 2, 10, 0, 0, 0, 0, ZoneId.systemDefault());
             m.apply(AttributeBuilder.build("ds", zdt), d);
-            assertEquals("2026-02-10", d.last.get()); // ISO_LOCAL_DATE default
+            assertEquals("2026-02-10", d.last.get());
         }
 
-        // DATETIME_STRING branch (formats ZonedDateTime -> String)
-        // Also covers the "custom datetimeFormat" path (note: implementation uses dateFormat in else)
         {
             CreateDest d = new CreateDest();
             var m = new SchemaDefinition.AttributeMapper<>(
@@ -186,13 +138,10 @@ class SchemaDefinitionAttributeMapperTest {
                     (Source s) -> null, null
             );
 
-            // Cover default datetime formatting
             ZonedDateTime zdt = ZonedDateTime.now(ZoneId.systemDefault());
             m.apply(AttributeBuilder.build("dts", zdt), d);
             assertNotNull(d.last.get());
 
-            // Cover custom-formatter branch (datetimeFormat != null)
-            // (Implementation uses dateFormat field in else; set both to avoid null)
             m.dateFormat(DateTimeFormatter.ISO_LOCAL_DATE);
             m.datetimeFormat(DateTimeFormatter.ISO_OFFSET_DATE_TIME);
             d.last.set(null);
@@ -200,7 +149,6 @@ class SchemaDefinitionAttributeMapperTest {
             assertNotNull(d.last.get());
         }
 
-        // GUARDED_STRING
         {
             CreateDest d = new CreateDest();
             var m = new SchemaDefinition.AttributeMapper<>(
@@ -219,7 +167,6 @@ class SchemaDefinitionAttributeMapperTest {
 
     @Test
     void applyDelta_single_shouldCoverReplaceBranches_andNullReplaceNoop() {
-        // replace == null -> early return
         var noReplace = new SchemaDefinition.AttributeMapper<>(
                 "x", SchemaDefinition.Types.STRING,
                 (String v, CreateDest d) -> {},
@@ -228,7 +175,6 @@ class SchemaDefinitionAttributeMapperTest {
         );
         noReplace.apply(AttributeDeltaBuilder.build("x", "v"), new UpdateDest()); // should not throw
 
-        // String-ish
         {
             UpdateDest d = new UpdateDest();
             var m = new SchemaDefinition.AttributeMapper<>(
@@ -254,46 +200,19 @@ class SchemaDefinitionAttributeMapperTest {
             assertEquals(10, d.last.get());
         }
 
-//        // Long
-//        {
-//            UpdateDest d = new UpdateDest();
-//            var m = new SchemaDefinition.AttributeMapper<>(
-//                    "l", SchemaDefinition.Types.LONG,
-//                    (Long v, CreateDest dest) -> {},
-//                    (Long v, UpdateDest dest) -> dest.last.set(v),
-//                    (Source s) -> null, null
-//            );
-//            m.apply(AttributeDeltaBuilder.build("l", 10L), d);
-//            assertEquals(10L, d.last.get());
-//        }
-//
-//        // Float
-//        {
-//            UpdateDest d = new UpdateDest();
-//            var m = new SchemaDefinition.AttributeMapper<>(
-//                    "f", SchemaDefinition.Types.FLOAT,
-//                    (Float v, CreateDest dest) -> {},
-//                    (Float v, UpdateDest dest) -> dest.last.set(v),
-//                    (Source s) -> null, null
-//            );
-//            m.apply(AttributeDeltaBuilder.build("f", 3.0f), d);
-//            assertEquals(3.0f, (Float) d.last.get(), 0.0001);
-//        }
-//
-//        // Double
-//        {
-//            UpdateDest d = new UpdateDest();
-//            var m = new SchemaDefinition.AttributeMapper<>(
-//                    "d", SchemaDefinition.Types.DOUBLE,
-//                    (Double v, CreateDest dest) -> {},
-//                    (Double v, UpdateDest dest) -> dest.last.set(v),
-//                    (Source s) -> null, null
-//            );
-//            m.apply(AttributeDeltaBuilder.build("d", 3.5d), d);
-//            assertEquals(3.5d, (Double) d.last.get(), 0.0001);
-//        }
+        // Long
+        {
+            UpdateDest d = new UpdateDest();
+            var m = new SchemaDefinition.AttributeMapper<>(
+                    "l", SchemaDefinition.Types.LONG,
+                    (Long v, CreateDest dest) -> {},
+                    (Long v, UpdateDest dest) -> dest.last.set(v),
+                    (Source s) -> null, null
+            );
+            m.apply(AttributeDeltaBuilder.build("l", 10L), d);
+            assertEquals(10L, d.last.get());
+        }
 
-        // Boolean
         {
             UpdateDest d = new UpdateDest();
             var m = new SchemaDefinition.AttributeMapper<>(
@@ -319,7 +238,6 @@ class SchemaDefinitionAttributeMapperTest {
             assertEquals(new BigDecimal("1.00"), d.last.get());
         }
 
-        // DATE / DATETIME -> replace accepts ZonedDateTime directly
         {
             UpdateDest d = new UpdateDest();
             var m = new SchemaDefinition.AttributeMapper<>(
@@ -333,7 +251,6 @@ class SchemaDefinitionAttributeMapperTest {
             assertEquals(zdt, d.last.get());
         }
 
-        // DATE_STRING -> formats to String
         {
             UpdateDest d = new UpdateDest();
             var m = new SchemaDefinition.AttributeMapper<>(
@@ -347,7 +264,6 @@ class SchemaDefinitionAttributeMapperTest {
             assertEquals("2026-02-10", d.last.get());
         }
 
-        // DATETIME_STRING -> formats to String
         {
             UpdateDest d = new UpdateDest();
             var m = new SchemaDefinition.AttributeMapper<>(
@@ -375,18 +291,7 @@ class SchemaDefinitionAttributeMapperTest {
             assertSame(gs, d.last.get());
         }
 
-        // else branch
-//        {
-//            UpdateDest d = new UpdateDest();
-//            var m = new SchemaDefinition.AttributeMapper<>(
-//                    "x", SchemaDefinition.Types.JSON,
-//                    (Object v, CreateDest dest) -> {},
-//                    (Object v, UpdateDest dest) -> dest.last.set(v),
-//                    (Source s) -> null, null
-//            );
-//            m.apply(AttributeDeltaBuilder.build("x", 999), d);
-//            assertEquals(999, d.last.get());
-//        }
+
     }
 
     // ---------- apply(R) coverage ----------

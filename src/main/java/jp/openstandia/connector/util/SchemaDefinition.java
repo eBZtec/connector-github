@@ -374,9 +374,9 @@ public class SchemaDefinition {
         public static final Types<String> JSON = new Types(String.class);
         public static final Types<String> UUID = new Types(String.class);
         public static final Types<Integer> INTEGER = new Types(Integer.class);
-        public static final Types<Integer> LONG = new Types(Long.class);
-        public static final Types<Integer> FLOAT = new Types(Float.class);
-        public static final Types<Integer> DOUBLE = new Types(Double.class);
+        public static final Types<Long> LONG = new Types(Long.class);
+        public static final Types<Float> FLOAT = new Types(Float.class);
+        public static final Types<Double> DOUBLE = new Types(Double.class);
         public static final Types<Boolean> BOOLEAN = new Types(Boolean.class);
         public static final Types<BigDecimal> BIG_DECIMAL = new Types(BigDecimal.class);
         public static final Types<String> DATE_STRING = new Types(ZonedDateTime.class);

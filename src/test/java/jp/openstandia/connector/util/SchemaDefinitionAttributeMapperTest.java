@@ -217,10 +217,6 @@ class SchemaDefinitionAttributeMapperTest {
 
     }
 
-    // ---------- apply(Attribute, C) coverage (multiple) ----------
-
-
-    // ---------- apply(AttributeDelta, U) coverage (single replace) ----------
     @Test
     void applyDelta_single_shouldCoverReplaceBranches_andNullReplaceNoop() {
         // replace == null -> early return

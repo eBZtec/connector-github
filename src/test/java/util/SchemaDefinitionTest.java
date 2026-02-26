@@ -1,19 +1,28 @@
 package util;
 
 import jp.openstandia.connector.util.SchemaDefinition;
+import jp.openstandia.connector.util.Utils;
 import org.identityconnectors.framework.common.objects.*;
 import org.junit.jupiter.api.Test;
+import org.kohsuke.github.SCIMPatchOperations;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.util.List;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 
+import static jp.openstandia.connector.util.Utils.toZoneDateTime;
+import static jp.openstandia.connector.util.Utils.toZoneDateTimeForISO8601OffsetDateTime;
+import static org.identityconnectors.framework.common.objects.AttributeInfo.Flags.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class SchemaDefinitionTest {
+
+    private static final DateTimeFormatter DEFAULT_DATE_FORMAT = DateTimeFormatter.ISO_LOCAL_DATE;
 
     @Test
     void testNewBuilderOverload() {
@@ -107,6 +116,275 @@ class SchemaDefinitionTest {
         Field fetchField = attr.getClass().getDeclaredField("fetchField");
         fetchField.setAccessible(true);
         assertEquals("fetchName", fetchField.get(attr));
+    }
+
+    static class Dummy {
+        public String id;
+        public Float attr;
+        public String displayName;
+        public Double attrDouble;
+        public Long attrLong;
+        public List<String> attrList;
+        public List<String> attrListDatetime;
+        public String attrDate;
+        public String attrDatetime;
+    }
+
+    private String formatDate(ZonedDateTime zonedDateTime) {
+        if (zonedDateTime == null) {
+            return null;
+        }
+        return zonedDateTime.format(DEFAULT_DATE_FORMAT);
+    }
+
+    private static SchemaDefinition getSchemaDefinition(Dummy dummy) {
+        ObjectClass objectClass = new ObjectClass("testClass");
+
+        SchemaDefinition.Builder<Dummy, SCIMPatchOperations, Dummy> builder = new SchemaDefinition.Builder<>(objectClass, Dummy.class, SCIMPatchOperations.class, Dummy.class);
+
+        builder.addUid("dummyId",
+                SchemaDefinition.Types.UUID,
+                null,
+                (source) -> source.id,
+                "id",
+                NOT_CREATABLE, NOT_UPDATEABLE
+        );
+
+        builder.addName("displayName",
+                SchemaDefinition.Types.STRING_CASE_IGNORE,
+                (source, dest) -> dest.displayName = source,
+                (source, dest) -> dest.replace("displayName", source),
+                (source) -> source.displayName,
+                null,
+                REQUIRED
+        );
+
+        builder.add("attr",
+                SchemaDefinition.Types.FLOAT,
+                (value, obj) -> obj.attr = value,
+                (value, obj) -> obj.replace("attr", String.valueOf(value)),
+                (source) -> source.attr,
+                "attr"
+        );
+
+        builder.add("attrDouble",
+                SchemaDefinition.Types.DOUBLE,
+                (value, obj) -> obj.attrDouble = value,
+                (value, obj) -> obj.replace("attrDouble", String.valueOf(value)),
+                (source) -> source.attrDouble,
+                "attrDouble"
+        );
+
+        builder.add("attrLong",
+                SchemaDefinition.Types.LONG,
+                (value, obj) -> obj.attrLong = value,
+                (value, obj) -> obj.replace("attrLong", String.valueOf(value)),
+                (source) -> source.attrLong,
+                "attrLong"
+        );
+
+        builder.addAsMultiple(
+                "attrList",
+                SchemaDefinition.Types.DATE_STRING,
+                (source, obj) -> obj.attrList = source,
+                (add, obj) -> {},
+                (remove, obj) -> {},
+                (source) -> source.attrList != null ? source.attrList.stream() : null,
+                null
+        );
+
+        builder.addAsMultiple(
+                "attrListDatetime",
+                SchemaDefinition.Types.DATETIME_STRING,
+                (source, obj) -> obj.attrListDatetime = source,
+                (add, obj) -> {},
+                (remove, obj) -> {},
+                (source) -> source.attrListDatetime != null ? source.attrListDatetime.stream() : null,
+                null
+        );
+
+        builder.add("attrDate",
+                SchemaDefinition.Types.DATE_STRING,
+                (value, obj) -> obj.attrDate = value,
+                (value, obj) -> obj.replace("attrDate", String.valueOf(value)),
+                (source) -> source.attrDate,
+                "attrDate"
+        );
+
+        builder.add("attrDateTime",
+                SchemaDefinition.Types.DATETIME_STRING,
+                (value, obj) -> obj.attrDatetime = value,
+                (value, obj) -> obj.replace("attrDateTime", String.valueOf(value)),
+                (source) -> source.attrDatetime,
+                "attrDateTime"
+        );
+
+        return builder.build();
+    }
+
+    @Test
+    void testSchemaDefinitionApplyForSetOfAttributes() {
+        Dummy dummy = new Dummy();
+        SchemaDefinition schemaDefinition = getSchemaDefinition(dummy);
+
+        Set<Attribute> attributeSet = new HashSet<>();
+        attributeSet.add(AttributeBuilder.build("attr", 20.0f));
+        attributeSet.add(AttributeBuilder.build("attrDouble", 20.0));
+        attributeSet.add(AttributeBuilder.build("attrLong", 20L));
+        attributeSet.add(AttributeBuilder.build("attrList", List.of(toZoneDateTime("2023-02-23"))));
+        attributeSet.add(AttributeBuilder.build("attrListDatetime", List.of(toZoneDateTime("2023-02-23"))));
+
+        schemaDefinition.apply(attributeSet, dummy);
+
+        assertEquals(20, dummy.attr, "Deveria conter o valor 20 no atributo dummy.attr");
+        assertEquals(20.0, dummy.attrDouble);
+        assertEquals(20L, dummy.attrLong);
+        assertEquals(1, dummy.attrList.size());
+        assertEquals(1, dummy.attrListDatetime.size());
+    }
+
+    @Test
+    void testSchemaDefinitionApplyForReadAttributesAndBuildConnectorObject() {
+        Dummy dummy = new Dummy();
+        dummy.id = "dummyId";
+        dummy.displayName = "displayName";
+        dummy.attr = 20.0F;
+        dummy.attrDouble = 20.0;
+        dummy.attrLong = 20L;
+        dummy.attrListDatetime = List.of("2023-03-02T02:01:00+01:00");
+        dummy.attrList = List.of("2026-08-09");
+
+        Set<String> attrToGet = new HashSet<>();
+        attrToGet.add("attr");
+        attrToGet.add("attrDouble");
+        attrToGet.add("attrLong");
+        attrToGet.add("attrListDatetime");
+        attrToGet.add("attrList");
+
+        SchemaDefinition schemaDefinition = getSchemaDefinition(dummy);
+
+        ConnectorObjectBuilder connectorObjectBuilder = schemaDefinition.toConnectorObjectBuilder(dummy, attrToGet, false);
+        ConnectorObject connectorObject = connectorObjectBuilder.build();
+
+        assertNotNull(connectorObjectBuilder);
+        assertNotNull(connectorObject);
+    }
+
+    @Test
+    void testSchemaDefinitionApplyForReadAttributesTypeDateNull() {
+        Dummy dummy = new Dummy();
+        dummy.id = "dummyId";
+        dummy.displayName = "displayName";
+        dummy.attrList = new ArrayList<>();
+
+        Set<String> attrToGet = new HashSet<>();
+        attrToGet.add("attrList");
+
+        SchemaDefinition schemaDefinition = getSchemaDefinition(dummy);
+
+        ConnectorObjectBuilder connectorObjectBuilder = schemaDefinition.toConnectorObjectBuilder(dummy, attrToGet, false);
+        ConnectorObject connectorObject = connectorObjectBuilder.build();
+
+        assertNotNull(connectorObjectBuilder);
+        assertNotNull(connectorObject);
+    }
+
+    @Test
+    void testSchemaDefinitionApplyForSetOfAttributeDeltasWithValueToAdd() {
+        Dummy dummy = new Dummy();
+        SchemaDefinition schemaDefinition = getSchemaDefinition(dummy);
+
+        Set<AttributeDelta> deltas = new HashSet<>();
+
+        AttributeDeltaBuilder delta1 = new AttributeDeltaBuilder();
+        delta1.setName("attrList");
+        delta1.addValueToAdd(List.of(toZoneDateTime("2023-02-23")));
+        deltas.add(delta1.build());
+
+        SCIMPatchOperations dest = new SCIMPatchOperations();
+
+        schemaDefinition.applyDelta(deltas, dest);
+
+    }
+
+    @Test
+    void testSchemaDefinitionApplyForSetOfAttributeDeltasWithValueToRemove() {
+        Dummy dummy = new Dummy();
+        SchemaDefinition schemaDefinition = getSchemaDefinition(dummy);
+
+        Set<AttributeDelta> deltas = new HashSet<>();
+
+        AttributeDeltaBuilder delta1 = new AttributeDeltaBuilder();
+        delta1.setName("attrList");
+        delta1.addValueToRemove(List.of(toZoneDateTime("2023-02-23")));
+        deltas.add(delta1.build());
+
+        SCIMPatchOperations dest = new SCIMPatchOperations();
+
+        schemaDefinition.applyDelta(deltas, dest);
+
+    }
+
+    @Test
+    void testSchemaDefinitionApplyForDatetimeStringWithSetOfAttributeDeltasWithValueToAdd() {
+        Dummy dummy = new Dummy();
+        SchemaDefinition schemaDefinition = getSchemaDefinition(dummy);
+        Set<AttributeDelta> deltas = new HashSet<>();
+
+        AttributeDeltaBuilder delta1 = new AttributeDeltaBuilder();
+        delta1.setName("attrListDatetime");
+        delta1.addValueToAdd(List.of(toZoneDateTime("2023-02-23")));
+        deltas.add(delta1.build());
+
+        SCIMPatchOperations dest = new SCIMPatchOperations();
+
+        schemaDefinition.applyDelta(deltas, dest);
+
+    }
+
+    @Test
+    void testSchemaDefinitionApplyForDatetimeStringWithSetOfAttributeDeltasWithValueToRemove() {
+        Dummy dummy = new Dummy();
+
+        SchemaDefinition schemaDefinition = getSchemaDefinition(dummy);
+        Set<AttributeDelta> deltas = new HashSet<>();
+
+        AttributeDeltaBuilder delta1 = new AttributeDeltaBuilder();
+        delta1.setName("attrListDatetime");
+        delta1.addValueToRemove(List.of(toZoneDateTime("2023-02-23")));
+        deltas.add(delta1.build());
+
+        SCIMPatchOperations dest = new SCIMPatchOperations();
+
+        schemaDefinition.applyDelta(deltas, dest);
+
+    }
+
+    @Test
+    void testSchemaDefinitionApplyForDoubleLongFloatWithSetOfAttributeDeltasWithValueToReplace() {
+        Dummy dummy = new Dummy();
+        SchemaDefinition schemaDefinition = getSchemaDefinition(dummy);
+        Set<AttributeDelta> deltas = new HashSet<>();
+
+        AttributeDeltaBuilder delta1 = new AttributeDeltaBuilder();
+        delta1.setName("attrDouble");
+        delta1.addValueToReplace(20.0);
+        deltas.add(delta1.build());
+
+        AttributeDeltaBuilder delta2 = new AttributeDeltaBuilder();
+        delta2.setName("attr");
+        delta2.addValueToReplace(20.0F);
+        deltas.add(delta2.build());
+
+        AttributeDeltaBuilder delta3 = new AttributeDeltaBuilder();
+        delta3.setName("attrLong");
+        delta3.addValueToReplace(20L);
+        deltas.add(delta3.build());
+
+        SCIMPatchOperations dest = new SCIMPatchOperations();
+
+        schemaDefinition.applyDelta(deltas, dest);
+
     }
 
     @Test

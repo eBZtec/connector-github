@@ -74,7 +74,7 @@ class SCIMPagedSearchIterableTest {
         };
 
         GHException thrown = assertThrows(GHException.class, builder::list);
-        assertTrue(thrown.getCause() instanceof MalformedURLException);
+        assertInstanceOf(MalformedURLException.class, thrown.getCause());
         assertEquals("URL malformada!", thrown.getCause().getMessage());
     }
 
@@ -213,6 +213,7 @@ class SCIMPagedSearchIterableTest {
         resultField.set(iterable, new SCIMSearchResult<>());
 
         iterable.populate();
+        iterable._iterator(2);
         verify(iterable, never()).iterator();
     }
 }

@@ -5,11 +5,6 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-/**
- * Verifica que os métodos default de GitHubClient (EMU User/Group/Copilot)
- * lançam UnsupportedOperationException, como definido na interface.
- */
-
 import okhttp3.Authenticator;
 import okhttp3.OkHttpClient;
 import org.identityconnectors.common.security.GuardedString;

@@ -2,6 +2,7 @@ package jp.openstandia.connector.github.rest;
 
 import jp.openstandia.connector.github.GitHubEMUConfiguration;
 import jp.openstandia.connector.github.GitHubEMUSchema;
+import org.identityconnectors.common.security.GuardedString;
 import org.kohsuke.github.TestSCIMPagedSearchIterable;
 import jp.openstandia.connector.util.QueryHandler;
 import org.identityconnectors.framework.common.exceptions.*;
@@ -39,7 +40,6 @@ class GitHubEMURESTClientTest {
 
     @Mock OperationOptions options;
 
-    // ---------- testable client (constructor-safe) ----------
     static class TestableClient extends GitHubEMURESTClient {
         static final AtomicInteger authCalls = new AtomicInteger(0);
 
@@ -49,8 +49,6 @@ class GitHubEMURESTClientTest {
 
         @Override
         public void auth() {
-            //TestableClient.authCalls.set(0);
-            // No network; just count calls
             authCalls.incrementAndGet();
         }
     }
@@ -59,19 +57,14 @@ class GitHubEMURESTClientTest {
 
     @BeforeEach
     void setUp() throws Exception {
-        // Avoid NPE if something accidentally calls configuration in overridden auth()
-        //when(configuration.getEnterpriseSlug()).thenReturn("ent");
 
         client = new TestableClient(configuration);
 
-        // inject mocks (apiClient is private -> reflection)
         setPrivateField(client, "apiClient", apiClient);
 
-        // enterpriseApiClient is package-private -> direct access
         client.enterpriseApiClient = enterprise;
     }
 
-    // ---------- reflection helpers ----------
     private static void setPrivateField(Object target, String fieldName, Object value) throws Exception {
         Field f = target.getClass().getSuperclass().getDeclaredField(fieldName);
         f.setAccessible(true);
@@ -84,22 +77,15 @@ class GitHubEMURESTClientTest {
         f.setLong(target, value);
     }
 
-    // =======================================================
-    // setInstanceName
-    // =======================================================
     @Test
     void setInstanceName_setsValue() {
         client.setInstanceName("myInstance");
-        // no getter; just validate no exception and used in logging paths
         assertDoesNotThrow(() -> client.setInstanceName("another"));
     }
 
-    // =======================================================
-    // test()
-    // =======================================================
     @Test
     void test_success_callsApiUrlValidity() throws Exception {
-        setPrivateLong(client, "lastAuthenticated", 0L); // prevent withAuth calling auth()
+        setPrivateLong(client, "lastAuthenticated", 0L);
 
         client.test();
 
@@ -116,18 +102,11 @@ class GitHubEMURESTClientTest {
         assertTrue(ex.getMessage().contains("isn't active"));
     }
 
-    // =======================================================
-    // auth()
-    // =======================================================
     @Test
     void auth_isOverridden_noNetwork_calledByCtorAtLeastOnce() {
-        // Constructor calls auth(); our override increments counter
         assertTrue(client.authCalls.get() >= 1);
     }
 
-//    // =======================================================
-//    // handleApiException(Exception)
-//    // =======================================================
     @Test
     void handleApiException_400_mapsToInvalidAttributeValueException() {
         Exception e = ghFileNotFoundWithStatus("HTTP/1.1 400 Bad Request");
@@ -140,7 +119,7 @@ class GitHubEMURESTClientTest {
     void handleApiException_401_mapsToConnectionFailedUnauthorized() {
         Exception e = ghFileNotFoundWithStatus("HTTP/1.1 401 Unauthorized");
         ConnectorException mapped = client.handleApiException(e);
-        assertTrue(mapped instanceof ConnectionFailedException); // your UnauthorizedException extends ConnectionFailedException
+        assertTrue(mapped instanceof ConnectionFailedException);
     }
 
     @Test
@@ -185,9 +164,6 @@ class GitHubEMURESTClientTest {
         return ex;
     }
 
-    // =======================================================
-    // withAuth(Callable<T>)
-    // =======================================================
     @Test
     void withAuth_whenLastAuthenticatedNonZero_callsAuth() throws Exception {
         setPrivateLong(client, "lastAuthenticated", 123L);
@@ -195,7 +171,7 @@ class GitHubEMURESTClientTest {
         String out = client.withAuth(() -> "ok");
 
         assertEquals("ok", out);
-        assertTrue(client.authCalls.get() >= 2); // ctor auth + this auth
+        assertTrue(client.authCalls.get() >= 2);
     }
 
     @Test
@@ -209,9 +185,6 @@ class GitHubEMURESTClientTest {
         );
     }
 
-    // =======================================================
-    // createEMUUser
-    // =======================================================
     @Test
     void createEMUUser_returnsUidWithName() throws Exception {
         setPrivateLong(client, "lastAuthenticated", 0L);
@@ -229,9 +202,6 @@ class GitHubEMURESTClientTest {
         verify(enterprise).createSCIMEMUUser(any(SCIMEMUUser.class));
     }
 
-    // =======================================================
-    // patchEMUUser
-    // =======================================================
     @Test
     void patchEMUUser_callsUpdate() throws Exception {
         setPrivateLong(client, "lastAuthenticated", 0L);
@@ -244,9 +214,6 @@ class GitHubEMURESTClientTest {
         verify(enterprise).updateSCIMEMUUser("u1", ops);
     }
 
-    // =======================================================
-    // deleteEMUUser
-    // =======================================================
     @Test
     void deleteEMUUser_callsDelete() throws Exception {
         setPrivateLong(client, "lastAuthenticated", 0L);
@@ -256,9 +223,6 @@ class GitHubEMURESTClientTest {
         verify(enterprise).deleteSCIMUser("u1");
     }
 
-    // =======================================================
-    // getEMUUser(Uid)
-    // =======================================================
     @Test
     void getEMUUser_byUid_callsGet() throws Exception {
         setPrivateLong(client, "lastAuthenticated", 0L);
@@ -273,9 +237,6 @@ class GitHubEMURESTClientTest {
         verify(enterprise).getSCIMEMUUser("u1");
     }
 
-    // =======================================================
-    // getEMUUser(Name)
-    // =======================================================
     @Test
     void getEMUUser_byName_callsGetByUserName() throws Exception {
         setPrivateLong(client, "lastAuthenticated", 0L);
@@ -290,9 +251,6 @@ class GitHubEMURESTClientTest {
         verify(enterprise).getSCIMEMUUserByUserName("jdoe");
     }
 
-    // =======================================================
-    // getEMUUsers
-    // =======================================================
     @Test
     void getEMUUsers_noOffset_iteratesAllUntilHandlerFalse_returnsTotal() throws Exception {
         setPrivateLong(client, "lastAuthenticated", 0L);
@@ -306,7 +264,7 @@ class GitHubEMURESTClientTest {
         @SuppressWarnings("unchecked")
         QueryHandler<SCIMEMUUser> handler = mock(QueryHandler.class);
         when(handler.handle(u1)).thenReturn(true);
-        when(handler.handle(u2)).thenReturn(false); // stop early
+        when(handler.handle(u2)).thenReturn(false);
 
         int total = client.getEMUUsers(handler, options, Set.of(), 10, 0);
 
@@ -333,7 +291,7 @@ class GitHubEMURESTClientTest {
         int total = client.getEMUUsers(handler, options, Set.of(), 2, 1);
 
         assertEquals(99, total);
-        verify(handler, times(2)).handle(any()); // stops at pageSize=2
+        verify(handler, times(2)).handle(any());
     }
 
     private static <T> org.kohsuke.github.PagedIterator<T> pagedIteratorOf(List<T> items) {
@@ -348,9 +306,6 @@ class GitHubEMURESTClientTest {
         return pit;
     }
 
-
-
-    // helper for SCIMPagedSearchIterable
     @SuppressWarnings("unchecked")
     private static <T> SCIMPagedSearchIterable<T> mockPagedIterable(List<T> items, int totalCount) {
         SCIMPagedSearchIterable<T> iterable = mock(SCIMPagedSearchIterable.class);
@@ -359,9 +314,6 @@ class GitHubEMURESTClientTest {
         return iterable;
     }
 
-    // =======================================================
-    // createEMUGroup
-    // =======================================================
     @Test
     void createEMUGroup_returnsUidWithName() throws Exception {
         setPrivateLong(client, "lastAuthenticated", 0L);
@@ -379,9 +331,6 @@ class GitHubEMURESTClientTest {
         verify(enterprise).createSCIMEMUGroup(any(SCIMEMUGroup.class));
     }
 
-    // =======================================================
-    // patchEMUGroup
-    // =======================================================
     @Test
     void patchEMUGroup_callsUpdate() throws Exception {
         setPrivateLong(client, "lastAuthenticated", 0L);
@@ -394,9 +343,6 @@ class GitHubEMURESTClientTest {
         verify(enterprise).updateSCIMEMUGroup("g1", ops);
     }
 
-    // =======================================================
-    // deleteEMUGroup
-    // =======================================================
     @Test
     void deleteEMUGroup_callsDelete() throws Exception {
         setPrivateLong(client, "lastAuthenticated", 0L);
@@ -406,9 +352,6 @@ class GitHubEMURESTClientTest {
         verify(enterprise).deleteSCIMGroup("g1");
     }
 
-    // =======================================================
-    // getEMUGroup(Uid)
-    // =======================================================
     @Test
     void getEMUGroup_byUid_callsGet() throws Exception {
         setPrivateLong(client, "lastAuthenticated", 0L);
@@ -422,9 +365,6 @@ class GitHubEMURESTClientTest {
         verify(enterprise).getSCIMEMUGroup("g1");
     }
 
-    // =======================================================
-    // getEMUGroup(Name)
-    // =======================================================
     @Test
     void getEMUGroup_byName_callsGetByDisplayName() throws Exception {
         setPrivateLong(client, "lastAuthenticated", 0L);
@@ -438,9 +378,6 @@ class GitHubEMURESTClientTest {
         verify(enterprise).getSCIMEMUGroupByDisplayName("devs");
     }
 
-    // =======================================================
-    // getCopilotSeat(Uid)
-    // =======================================================
     @Test
     void getCopilotSeat_byUid_callsGetByUid() throws Exception {
         setPrivateLong(client, "lastAuthenticated", 0L);
@@ -454,9 +391,6 @@ class GitHubEMURESTClientTest {
         verify(enterprise).getCopilotSeatByUid("u1");
     }
 
-    // =======================================================
-    // getCopilotSeat(Name)
-    // =======================================================
     @Test
     void getCopilotSeat_byName_callsGetByDisplayName() throws Exception {
         setPrivateLong(client, "lastAuthenticated", 0L);
@@ -470,9 +404,6 @@ class GitHubEMURESTClientTest {
         verify(enterprise).getCopilotSeatByDisplayName("Jane Doe");
     }
 
-    // =======================================================
-    // getCopilotSeats
-    // =======================================================
     @Test
     void getCopilotSeats_noOffset_iteratesAllUntilHandlerFalse_returnsTotalSeats() throws Exception {
         setPrivateLong(client, "lastAuthenticated", 0L);
@@ -574,9 +505,6 @@ class GitHubEMURESTClientTest {
         verify(handler, times(2)).handle(any());
     }
 
-    // =======================================================
-    // close()
-    // =======================================================
     @Test
     void close_doesNothing() {
         assertDoesNotThrow(() -> client.close());
@@ -595,7 +523,7 @@ class GitHubEMURESTClientTest {
         @SuppressWarnings("unchecked")
         QueryHandler<SCIMEMUUser> handler = mock(QueryHandler.class);
         when(handler.handle(u1)).thenReturn(true);
-        when(handler.handle(u2)).thenReturn(false);   // ← força o break
+        when(handler.handle(u2)).thenReturn(false);
 
         int total = client.getEMUUsers(handler, options, Set.of(), 5, 1);
 
@@ -619,7 +547,7 @@ class GitHubEMURESTClientTest {
         @SuppressWarnings("unchecked")
         QueryHandler<GitHubCopilotSeat> handler = mock(QueryHandler.class);
         when(handler.handle(s1)).thenReturn(true);
-        when(handler.handle(s2)).thenReturn(false);   // ← força o break
+        when(handler.handle(s2)).thenReturn(false);
 
         int total = client.getCopilotSeats(handler, options, Set.of(), 3, 1);
 
@@ -643,12 +571,49 @@ class GitHubEMURESTClientTest {
         @SuppressWarnings("unchecked")
         QueryHandler<SCIMEMUGroup> handler = mock(QueryHandler.class);
         when(handler.handle(g1)).thenReturn(true);
-        when(handler.handle(g2)).thenReturn(false);   // ← força o break
+        when(handler.handle(g2)).thenReturn(false);
 
         int total = client.getEMUGroups(handler, options, Set.of(), 4, 1);
 
         assertEquals(88, total);
         verify(handler).handle(g1);
         verify(handler).handle(g2);
+    }
+
+    @Test
+    void auth_catchIOException_coversLine105() {
+        lenient().when(configuration.getAccessToken())
+                .thenReturn(new GuardedString("ghp_testtoken".toCharArray()));
+
+        lenient().when(configuration.getEnterpriseSlug())
+                .thenReturn("test-enterprise");
+
+        lenient().when(configuration.getEndpointURL())
+                .thenReturn("https://api.github.com");
+
+        try (MockedStatic<GitHubExt> mocked = mockStatic(GitHubExt.class)) {
+
+            mocked.when(() -> GitHubExt.build(any(GitHubBuilder.class)))
+                    .thenThrow(new IOException("Simulated IO failure during auth"));
+
+            ConnectionFailedException ex = assertThrows(
+                    ConnectionFailedException.class,
+                    () -> new GitHubEMURESTClient(configuration).auth()
+            );
+
+            assertTrue(ex.getMessage().contains("Failed to authenticate GitHub EMU API"));
+            assertInstanceOf(IOException.class, ex.getCause());
+        }
+    }
+
+    @Test
+    void handleApiException_GHFileNotFoundWithUnknownStatus_coversLoggerWithStatusCode() {
+        client.setInstanceName("test-instance");
+
+        GHFileNotFoundException ex = ghFileNotFoundWithStatus("HTTP/1.1 500 Internal Server Error");
+
+        ConnectorException result = client.handleApiException(ex);
+
+        assertInstanceOf(ConnectorIOException.class, result);
     }
 }

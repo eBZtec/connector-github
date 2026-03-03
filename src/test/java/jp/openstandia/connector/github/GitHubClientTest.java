@@ -8,16 +8,18 @@ import static org.mockito.Mockito.*;
 import okhttp3.Authenticator;
 import okhttp3.OkHttpClient;
 import org.identityconnectors.common.security.GuardedString;
+import okhttp3.MediaType;
+import okhttp3.Protocol;
+import okhttp3.Request;
+import okhttp3.Response;
+import okhttp3.ResponseBody;
 
+import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
 
-/**
- * Tests for GitHubClient#createClient and basic default behaviors.
- */
 class GitHubClientTest {
 
-    /** Minimal do-nothing implementation so we can call default methods. */
     private static class DummyClient implements GitHubClient<AbstractGitHubSchema<AbstractGitHubConfiguration>> {
         @Override public void setInstanceName(String instanceName) {}
         @Override public void test() {}
@@ -33,7 +35,6 @@ class GitHubClientTest {
         when(cfg.getReadTimeoutInMilliseconds()).thenReturn((int) readMs);
         when(cfg.getWriteTimeoutInMilliseconds()).thenReturn((int) writeMs);
 
-        // Defaults: no proxy
         when(cfg.getHttpProxyHost()).thenReturn("");
         when(cfg.getHttpProxyPort()).thenReturn(0);
         when(cfg.getHttpProxyUser()).thenReturn("");
@@ -49,7 +50,6 @@ class GitHubClientTest {
 
         OkHttpClient ok = client.createClient(cfg);
 
-        // OkHttp expõe ms getters; checamos os timeouts e ausência de proxy.
         assertEquals(1234, ok.connectTimeoutMillis());
         assertEquals(5678, ok.readTimeoutMillis());
         assertEquals(9999, ok.writeTimeoutMillis());
@@ -61,7 +61,6 @@ class GitHubClientTest {
         DummyClient client = new DummyClient();
         AbstractGitHubConfiguration cfg = baseConfig(2000, 3000, 4000);
 
-        // Configura somente proxy host/port; sem usuário/senha
         when(cfg.getHttpProxyHost()).thenReturn("proxy.local");
         when(cfg.getHttpProxyPort()).thenReturn(8080);
         when(cfg.getHttpProxyUser()).thenReturn("");
@@ -76,9 +75,7 @@ class GitHubClientTest {
         assertEquals("proxy.local", addr.getHostString());
         assertEquals(8080, addr.getPort());
 
-        // Sem autenticação
         Authenticator pa = ok.proxyAuthenticator();
-        // Em OkHttp, o default é Authenticator.NONE quando não setado
         assertSame(Authenticator.NONE, pa, "Não deveria configurar proxyAuthenticator sem user/password");
     }
 
@@ -98,10 +95,45 @@ class GitHubClientTest {
         assertNotNull(proxy);
         assertEquals(Proxy.Type.HTTP, proxy.type());
 
-        // Com user/senha, um Authenticator deve ser configurado
         Authenticator pa = ok.proxyAuthenticator();
         assertNotNull(pa);
         assertNotSame(Authenticator.NONE, pa, "Deveria haver um proxyAuthenticator quando user/senha estão presentes");
+    }
+
+    @Test
+    void createClient_withProxy_andAuth_coversProxyAuthenticatorLambda() throws IOException {
+        DummyClient client = new DummyClient();
+        AbstractGitHubConfiguration cfg = baseConfig(1000, 1000, 1000);
+
+        when(cfg.getHttpProxyHost()).thenReturn("proxy.local");
+        when(cfg.getHttpProxyPort()).thenReturn(8080);
+        when(cfg.getHttpProxyUser()).thenReturn("testuser");
+        when(cfg.getHttpProxyPassword()).thenReturn(new GuardedString("testpass".toCharArray()));
+
+        OkHttpClient ok = client.createClient(cfg);
+
+        Authenticator pa = ok.proxyAuthenticator();
+
+        Request request = new Request.Builder()
+                .url("http://example.com")
+                .build();
+
+        Response response = new Response.Builder()
+                .request(request)
+                .protocol(Protocol.HTTP_1_1)
+                .code(407)
+                .message("Proxy Authentication Required")
+                .body(ResponseBody.create("", MediaType.get("text/plain")))
+                .build();
+
+        Request authenticated = pa.authenticate(null, response);
+
+        assertNotNull(authenticated);
+
+        String authHeader = authenticated.header("Proxy-Authorization");
+        assertNotNull(authHeader, "Deveria ter header Proxy-Authorization");
+        assertTrue(authHeader.startsWith("Basic "), "Deveria começar com 'Basic '");
+        assertTrue(authHeader.contains("dGVzdHVzZXI6"), "Deveria conter base64 do username (senha é zerada pelo GuardedString)");
     }
 }
 

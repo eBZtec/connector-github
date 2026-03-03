@@ -4,13 +4,16 @@ import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.util.NoSuchElementException;
+import java.util.function.Function;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
+import org.mockito.ArgumentCaptor;
 
 @SuppressWarnings({"unchecked", "rawtypes"})
 class GitHubCopilotSeatPageIteratorTest {
@@ -163,37 +166,29 @@ class GitHubCopilotSeatPageIteratorTest {
     }
 
     @Test
-    void shouldCallSendRequestInsideFetch() throws Exception {
+    void shouldCallSendRequestAndCoverParserLambda() throws Exception {
         GitHubClient mockClient = mock(GitHubClient.class);
         GitHubRequest request = fakeRequest.method("GET").build();
+
+        GitHubCopilotSeatsSearchResult mockBody = new GitHubCopilotSeatsSearchResult();
 
         GitHubResponse.ResponseInfo mockInfo = mock(GitHubResponse.ResponseInfo.class);
         when(mockInfo.request()).thenReturn(request);
         when(mockInfo.statusCode()).thenReturn(200);
 
-        GitHubCopilotSeatsSearchResult mockBody = new GitHubCopilotSeatsSearchResult();
         GitHubResponse<GitHubCopilotSeatsSearchResult> fakeResponse =
                 new GitHubResponse<>(mockInfo, mockBody);
 
-        when(mockClient.sendRequest(any(GitHubRequest.class), any()))
+        when(mockClient.sendRequest(eq(request), any()))
                 .thenReturn((GitHubResponse) fakeResponse);
 
         GitHubCopilotSeatPageIterator<GitHubCopilotSeatsSearchResult> iterator =
                 new GitHubCopilotSeatPageIterator<>(mockClient, GitHubCopilotSeatsSearchResult.class, request);
 
-        Field nextField = GitHubCopilotSeatPageIterator.class.getDeclaredField("next");
-        nextField.setAccessible(true);
-        nextField.set(iterator, null);
+        // triggera o fetch + o lambda do parser automaticamente
+        assertTrue(iterator.hasNext());
 
-        Field nextReqField = GitHubCopilotSeatPageIterator.class.getDeclaredField("nextRequest");
-        nextReqField.setAccessible(true);
-        nextReqField.set(iterator, request);
-
-        Method fetchMethod = GitHubCopilotSeatPageIterator.class.getDeclaredMethod("fetch");
-        fetchMethod.setAccessible(true);
-
-        fetchMethod.invoke(iterator);
-        verify(mockClient, times(1)).sendRequest(eq(request), any());
+        verify(mockClient).sendRequest(eq(request), any());
     }
 
     @Test
@@ -258,7 +253,7 @@ class GitHubCopilotSeatPageIteratorTest {
     void shouldReturnNullWhenLinkHeaderDoesNotContainNextRel() throws MalformedURLException {
         GitHubResponse mockResponse = mock(GitHubResponse.class);
         when(mockResponse.headerField("Link")).thenReturn(
-                "<https://api.github.com/scim/v2/Users?page=5>; rel=\"last\"" // sem "next"
+                "<https://api.github.com/scim/v2/Users?page=5>; rel=\"last\""
         );
 
         GitHubRequest request = fakeRequest.method("GET").build();
@@ -270,5 +265,71 @@ class GitHubCopilotSeatPageIteratorTest {
 
         GitHubRequest result = iterator.findNextURL(mockResponse);
         assertNull(result, "Deveria retornar null quando não há rel=\"next\" no header Link");
+    }
+
+    @Test
+    void testCreateWithPageSizeZeroOrNegative() throws Exception {
+        GitHubClient mockClient = mock(GitHubClient.class);
+        GitHubRequest mockRequest = mock(GitHubRequest.class);
+        GitHubRequest.Builder mockBuilder = mock(GitHubRequest.Builder.class);
+
+        when(mockRequest.method()).thenReturn("GET");
+        when(mockRequest.toBuilder()).thenReturn(mockBuilder);
+
+        GitHubCopilotSeatPageIterator<GitHubCopilotSeatsSearchResult> iterator =
+                GitHubCopilotSeatPageIterator.create(mockClient, GitHubCopilotSeatsSearchResult.class, mockRequest, 0, 10);
+
+        assertNotNull(iterator);
+        verify(mockBuilder, never()).with(anyString(), anyInt());
+    }
+
+    @Test
+    void fetch_shouldReturnEarlyWhenNextAlreadySet() throws Exception {
+        GitHubClient mockClient = mock(GitHubClient.class);
+        GitHubRequest request = fakeRequest.build();
+
+        GitHubCopilotSeatPageIterator<GitHubCopilotSeatsSearchResult> iterator =
+                new GitHubCopilotSeatPageIterator<>(mockClient, GitHubCopilotSeatsSearchResult.class, request);
+
+        setPrivateField(iterator, "next", new GitHubCopilotSeatsSearchResult());
+
+        Method fetchMethod = GitHubCopilotSeatPageIterator.class.getDeclaredMethod("fetch");
+        fetchMethod.setAccessible(true);
+        fetchMethod.invoke(iterator);
+
+        verify(mockClient, never()).sendRequest(any(GitHubRequest.class), any());
+    }
+
+    @Test
+    void fetch_shouldThrowGHExceptionOnIOException() throws Exception {
+        GitHubClient mockClient = mock(GitHubClient.class);
+        GitHubRequest request = fakeRequest.build();
+
+        when(mockClient.sendRequest(any(GitHubRequest.class), any()))
+                .thenThrow(new IOException("network error"));
+
+        GitHubCopilotSeatPageIterator<GitHubCopilotSeatsSearchResult> iterator =
+                new GitHubCopilotSeatPageIterator<>(mockClient, GitHubCopilotSeatsSearchResult.class, request);
+
+        setPrivateField(iterator, "next", null);
+        setPrivateField(iterator, "nextRequest", request);
+
+        GHException ex = assertThrows(GHException.class, () -> {
+            try {
+                Method fetchMethod = GitHubCopilotSeatPageIterator.class.getDeclaredMethod("fetch");
+                fetchMethod.setAccessible(true);
+                fetchMethod.invoke(iterator);
+            } catch (InvocationTargetException e) {
+                throw e.getCause();
+            }
+        });
+
+        assertTrue(ex.getMessage().contains("Failed to retrieve"));
+    }
+
+    private static void setPrivateField(Object target, String fieldName, Object value) throws Exception {
+        Field field = target.getClass().getDeclaredField(fieldName);
+        field.setAccessible(true);
+        field.set(target, value);
     }
 }

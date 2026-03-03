@@ -1,6 +1,7 @@
 package org.kohsuke.github;
 
 import org.junit.jupiter.api.Test;
+import org.mockito.MockedStatic;
 
 import java.lang.reflect.Field;
 import java.net.MalformedURLException;
@@ -95,8 +96,8 @@ class GitHubCopilotSeatPagedSearchIterableTest {
         iterable.populate();
 
         // Assert
-        verify(iterable, times(1)).iterator();  // Verifica que chamou iterator()
-        verify(mockIterator, times(1)).hasNext();  // Verifica que tentou iterar
+        verify(iterable, times(1)).iterator();
+        verify(mockIterator, times(1)).hasNext();
     }
 
     @Test
@@ -121,6 +122,43 @@ class GitHubCopilotSeatPagedSearchIterableTest {
         iterable.populate();
         verify(iterable, never()).iterator();
     }
+    @Test
+    void _iterator_callsCreateAndAdaptWithCorrectParameters() {
+        GitHub mockRoot = mock(GitHub.class);
+        GitHubClient mockClient = mock(GitHubClient.class);
+        when(mockRoot.getClient()).thenReturn(mockClient);
 
+        GitHubRequest mockRequest = mock(GitHubRequest.class);
+
+        GitHubCopilotSeatPagedSearchIterable<String> iterable =
+                new GitHubCopilotSeatPagedSearchIterable<>(
+                        mockRoot,
+                        mockRequest,
+                        (Class<? extends GitHubCopilotSeatsSearchResult<String>>) (Class<?>) GitHubCopilotSeatsSearchResult.class);
+
+        try (MockedStatic<GitHubCopilotSeatPageIterator> mockedStatic = mockStatic(GitHubCopilotSeatPageIterator.class)) {
+            GitHubCopilotSeatPageIterator<GitHubCopilotSeatsSearchResult<String>> mockPageIterator = mock(GitHubCopilotSeatPageIterator.class);
+            when(mockPageIterator.hasNext()).thenReturn(false);
+
+            mockedStatic.when(() -> GitHubCopilotSeatPageIterator.create(
+                            any(GitHubClient.class),
+                            any(Class.class),
+                            any(GitHubRequest.class),
+                            anyInt(),
+                            anyInt()))
+                    .thenReturn(mockPageIterator);
+
+            Iterator<String> iterator = iterable.iterator();
+
+            assertNotNull(iterator);
+            verify(mockRoot).getClient();
+            mockedStatic.verify(() -> GitHubCopilotSeatPageIterator.create(
+                    any(GitHubClient.class),
+                    any(Class.class),
+                    any(GitHubRequest.class),
+                    anyInt(),
+                    anyInt()));
+        }
+    }
 }
 

@@ -3,10 +3,15 @@ package org.kohsuke.github;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.mockito.ArgumentCaptor;
 
 import java.io.IOException;
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.util.NoSuchElementException;
+import java.util.function.Function;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -232,5 +237,94 @@ class SCIMPageIteratorTest {
                     ? "Throws GHException (still has next)"
                     : "Returns finalResponse (iteration complete)";
         }
+    }
+
+    @Test
+    void create_withPageSizeZeroOrNegative_doesNotCallWith() throws Exception {
+        GitHubClient mockClient = mock(GitHubClient.class);
+        GitHubRequest mockRequest = mock(GitHubRequest.class);
+        GitHubRequest.Builder mockBuilder = mock(GitHubRequest.Builder.class);
+
+        when(mockRequest.method()).thenReturn("GET");
+        when(mockRequest.toBuilder()).thenReturn(mockBuilder);
+
+        SCIMPageIterator<SCIMSearchResult> iterator =
+                SCIMPageIterator.create(mockClient, SCIMSearchResult.class, mockRequest, 0, 10);
+
+        assertNotNull(iterator);
+        verify(mockBuilder, never()).with(anyString(), anyInt());
+    }
+
+    @Test
+    void fetch_returnsEarlyWhenNextAlreadySet() throws Exception {
+        GitHubClient mockClient = mock(GitHubClient.class);
+        GitHubRequest request = mock(GitHubRequest.class);
+        when(request.method()).thenReturn("GET");
+
+        SCIMPageIterator<SCIMSearchResult> iterator =
+                new SCIMPageIterator<>(mockClient, SCIMSearchResult.class, request);
+
+        setPrivateField(iterator, "next", new SCIMSearchResult());
+
+        Method fetchMethod = SCIMPageIterator.class.getDeclaredMethod("fetch");
+        fetchMethod.setAccessible(true);
+        fetchMethod.invoke(iterator);
+
+        verify(mockClient, never()).sendRequest(any(GitHubRequest.class), any());
+    }
+
+    @Test
+    void fetch_throwsGHExceptionOnIOException() throws Exception {
+        GitHubClient mockClient = mock(GitHubClient.class);
+        GitHubRequest request = mock(GitHubRequest.class);
+        when(request.method()).thenReturn("GET");
+
+        doThrow(new IOException("network error"))
+                .when(mockClient)
+                .sendRequest(any(GitHubRequest.class), any());
+
+        SCIMPageIterator<SCIMSearchResult> iterator =
+                new SCIMPageIterator<>(mockClient, SCIMSearchResult.class, request);
+
+        setPrivateField(iterator, "next", null);
+        setPrivateField(iterator, "nextRequest", request);
+
+        GHException ex = assertThrows(GHException.class, () -> {
+            try {
+                Method fetchMethod = SCIMPageIterator.class.getDeclaredMethod("fetch");
+                fetchMethod.setAccessible(true);
+                fetchMethod.invoke(iterator);
+            } catch (InvocationTargetException e) {
+                throw e.getCause();
+            }
+        });
+
+        assertTrue(ex.getMessage().contains("Failed to retrieve"));
+    }
+
+    @Test
+    void findNextURL_returnsNullWhenNoMorePages() throws MalformedURLException {
+        GitHubResponse<SCIMSearchResult> response = mock(GitHubResponse.class);
+        SCIMSearchResult body = new SCIMSearchResult();
+        body.startIndex = 100;
+        body.itemsPerPage = 50;
+        body.totalResults = 120;
+
+        when(response.body()).thenReturn(body);
+        when(response.request()).thenReturn(mock(GitHubRequest.class));
+
+        GitHubRequest request = mock(GitHubRequest.class);
+        when(request.method()).thenReturn("GET");
+
+        SCIMPageIterator<SCIMSearchResult> iterator =
+                new SCIMPageIterator<>(mock(GitHubClient.class), SCIMSearchResult.class, request);
+
+        assertNull(iterator.findNextURL(response));
+    }
+
+    private static void setPrivateField(Object target, String fieldName, Object value) throws Exception {
+        Field field = target.getClass().getDeclaredField(fieldName);
+        field.setAccessible(true);
+        field.set(target, value);
     }
 }

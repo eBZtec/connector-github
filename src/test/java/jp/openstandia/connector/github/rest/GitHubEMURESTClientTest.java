@@ -13,9 +13,15 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.kohsuke.github.*;
 import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.MockedConstruction;
+import static org.mockito.Mockito.mockConstruction;
+import static org.mockito.Mockito.doNothing;
+
 
 import java.lang.reflect.Field;
+import java.io.IOException;
 import java.util.*;
+import java.util.function.Consumer;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -574,5 +580,75 @@ class GitHubEMURESTClientTest {
     @Test
     void close_doesNothing() {
         assertDoesNotThrow(() -> client.close());
+    }
+
+    @Test
+    void getEMUUsers_withOffset_handlerReturnsFalse_triggersBreak() throws Exception {
+        setPrivateLong(client, "lastAuthenticated", 0L);
+
+        SCIMEMUUser u1 = new SCIMEMUUser(); u1.id = "1";
+        SCIMEMUUser u2 = new SCIMEMUUser(); u2.id = "2";
+
+        SCIMPagedSearchIterable<SCIMEMUUser> iterable = new TestSCIMPagedSearchIterable<>(List.of(u1, u2), 100);
+        when(enterprise.listSCIMUsers(5, 1)).thenReturn(iterable);
+
+        @SuppressWarnings("unchecked")
+        QueryHandler<SCIMEMUUser> handler = mock(QueryHandler.class);
+        when(handler.handle(u1)).thenReturn(true);
+        when(handler.handle(u2)).thenReturn(false);   // ← força o break
+
+        int total = client.getEMUUsers(handler, options, Set.of(), 5, 1);
+
+        assertEquals(100, total);
+        verify(handler).handle(u1);
+        verify(handler).handle(u2);
+    }
+
+    @Test
+    void getCopilotSeats_withOffset_handlerReturnsFalse_triggersBreak() throws Exception {
+        setPrivateLong(client, "lastAuthenticated", 0L);
+
+        GitHubCopilotSeat s1 = new GitHubCopilotSeat();
+        GitHubCopilotSeat s2 = new GitHubCopilotSeat();
+
+        GitHubCopilotSeatPagedSearchIterable<GitHubCopilotSeat> iterable =
+                new TestGitHubCopilotSeatPagedSearchIterable<>(List.of(s1, s2), 50);
+
+        when(enterprise.listAllSeats(3, 1)).thenReturn(iterable);
+
+        @SuppressWarnings("unchecked")
+        QueryHandler<GitHubCopilotSeat> handler = mock(QueryHandler.class);
+        when(handler.handle(s1)).thenReturn(true);
+        when(handler.handle(s2)).thenReturn(false);   // ← força o break
+
+        int total = client.getCopilotSeats(handler, options, Set.of(), 3, 1);
+
+        assertEquals(50, total);
+        verify(handler).handle(s1);
+        verify(handler).handle(s2);
+    }
+
+    @Test
+    void getEMUGroups_withOffset_handlerReturnsFalse_triggersBreak() throws Exception {
+        setPrivateLong(client, "lastAuthenticated", 0L);
+
+        SCIMEMUGroup g1 = new SCIMEMUGroup(); g1.id = "1";
+        SCIMEMUGroup g2 = new SCIMEMUGroup(); g2.id = "2";
+
+        SCIMPagedSearchIterable<SCIMEMUGroup> iterable =
+                new TestSCIMPagedSearchIterable<>(List.of(g1, g2), 88);
+
+        when(enterprise.listSCIMGroups(4, 1)).thenReturn(iterable);
+
+        @SuppressWarnings("unchecked")
+        QueryHandler<SCIMEMUGroup> handler = mock(QueryHandler.class);
+        when(handler.handle(g1)).thenReturn(true);
+        when(handler.handle(g2)).thenReturn(false);   // ← força o break
+
+        int total = client.getEMUGroups(handler, options, Set.of(), 4, 1);
+
+        assertEquals(88, total);
+        verify(handler).handle(g1);
+        verify(handler).handle(g2);
     }
 }

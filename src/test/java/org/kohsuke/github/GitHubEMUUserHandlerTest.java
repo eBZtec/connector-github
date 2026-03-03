@@ -230,6 +230,7 @@ class GitHubEMUUserHandlerTest {
         source.id = "uuid-1";
         source.userName = "jdoe";
         source.externalId = "ext-1";
+        source.displayName = "John Doe";
         source.active = true;
 
         SCIMName name = new SCIMName();
@@ -264,6 +265,10 @@ class GitHubEMUUserHandlerTest {
         attrsToGetSet.add("groups");
         attrsToGetSet.add("meta.created");
         attrsToGetSet.add("meta.lastModified");
+        attrsToGetSet.add("displayName");
+        attrsToGetSet.add(OperationalAttributes.ENABLE_NAME);
+        attrsToGetSet.add("externalId");
+        attrsToGetSet.add("name.formatted");
 
         ConnectorObject co =
                 handler.toConnectorObject(
@@ -272,15 +277,86 @@ class GitHubEMUUserHandlerTest {
 
         assertEquals("uuid-1", co.getUid().getUidValue());
         assertEquals("jdoe", co.getName().getNameValue());
+        assertEquals("John Doe", co.getAttributeByName("displayName").getValue().get(0));
+        assertEquals("John Doe", co.getAttributeByName("name.formatted").getValue().get(0));
+        assertEquals("ext-1", co.getAttributeByName("externalId").getValue().get(0));
 
         assertEquals("john@acme.com",
                 co.getAttributeByName("primaryEmail").getValue().get(0));
 
         assertEquals("developer",
                 co.getAttributeByName("primaryRole").getValue().get(0));
+        assertTrue((Boolean) co.getAttributeByName(OperationalAttributes.ENABLE_NAME).getValue().get(0));
 
         assertNotNull(co.getAttributeByName("meta.created"));
         assertNotNull(co.getAttributeByName("meta.lastModified"));
+    }
+
+    @Test
+    void createUserWithFormattedNameNotDefined() {
+        SchemaDefinition.Builder builder =
+                GitHubEMUUserHandler.createSchema(config, client);
+
+        assertNotNull(builder);
+
+        SchemaDefinition schema =
+                builder.build();
+
+        SCIMEMUUser source = new SCIMEMUUser();
+        source.id = "uuid-1";
+        source.userName = "jdoe";
+        source.externalId = "ext-1";
+        source.displayName = "John Doe";
+        source.active = true;
+
+        source.name = null;
+
+        Set<String> attrsToGetSet = new HashSet<>(Set.of());
+        attrsToGetSet.add("name.formatted");
+        attrsToGetSet.add("name.givenName");
+        attrsToGetSet.add("name.familyName");
+
+        ConnectorObject co =
+                handler.toConnectorObject(
+                        schema, source, attrsToGetSet, false
+                );
+        assertNull(co.getAttributeByName("name.formatted"));
+        assertNull(co.getAttributeByName("name.givenName"));
+        assertNull(co.getAttributeByName("name.familyName"));
+    }
+
+
+    @Test
+    void createUserWithNameGivenNameAndFamilyNameNull() {
+        SchemaDefinition.Builder builder =
+                GitHubEMUUserHandler.createSchema(config, client);
+
+        assertNotNull(builder);
+
+        SchemaDefinition schema =
+                builder.build();
+
+        SCIMEMUUser source = new SCIMEMUUser();
+        source.id = "uuid-1";
+        source.userName = "jdoe";
+        source.externalId = "ext-1";
+        source.displayName = "John Doe";
+        source.active = true;
+
+        SCIMName name = new SCIMName();
+        name.formatted = "John Doe";
+        source.name = name;
+
+        Set<String> attrsToGetSet = new HashSet<>(Set.of());
+        attrsToGetSet.add("name.formatted");
+        attrsToGetSet.add("name.givenName");
+        attrsToGetSet.add("name.familyName");
+
+        ConnectorObject co =
+                handler.toConnectorObject(
+                        schema, source, attrsToGetSet, false
+                );
+        assertEquals("John Doe", co.getAttributeByName("name.formatted").getValue().get(0));
     }
 
     @Test

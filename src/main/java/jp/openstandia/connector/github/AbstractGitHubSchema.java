@@ -51,12 +51,6 @@ public abstract class AbstractGitHubSchema<T extends AbstractGitHubConfiguration
         this.schemaHandlerMap.put(schemaDefinition.getType(), handler);
     }
 
-    protected void buildSchema(SchemaBuilder builder, ObjectClassInfo objectClassInfo, Function<ObjectClassInfo, ObjectHandler> callback) {
-        builder.defineObjectClass(objectClassInfo);
-        ObjectHandler handler = callback.apply(objectClassInfo);
-        this.schemaHandlerMap.put(objectClassInfo.getType(), handler);
-    }
-
     public ObjectHandler getSchemaHandler(ObjectClass objectClass) {
         return schemaHandlerMap.get(objectClass.getObjectClassValue());
     }

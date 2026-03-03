@@ -578,12 +578,7 @@ public class SchemaDefinition {
                     BigDecimal value = AttributeUtil.getBigDecimalValue(source);
                     create.accept((T) value, dest);
 
-                } else if (type == Types.DATE || type == Types.DATETIME) {
-                    ZonedDateTime date = (ZonedDateTime) AttributeUtil.getSingleValue(source);
-                    String formatted = formatDate(date);
-                    create.accept((T) formatted, dest);
-
-                } else if (type == Types.DATE_STRING) {
+                }  else if (type == Types.DATE_STRING) {
                     ZonedDateTime date = (ZonedDateTime) AttributeUtil.getSingleValue(source);
                     String formatted = formatDate(date);
                     create.accept((T) formatted, dest);

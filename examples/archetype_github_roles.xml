@@ -1,0 +1,51 @@
+<archetype xmlns="http://midpoint.evolveum.com/xml/ns/public/common/common-3" xmlns:c="http://midpoint.evolveum.com/xml/ns/public/common/common-3"
+           xmlns:icfs="http://midpoint.evolveum.com/xml/ns/public/connector/icf-1/resource-schema-3" xmlns:org="http://midpoint.evolveum.com/xml/ns/public/common/org-3"
+           xmlns:q="http://prism.evolveum.com/xml/ns/public/query-3" xmlns:ri="http://midpoint.evolveum.com/xml/ns/public/resource/instance-3"
+           xmlns:t="http://prism.evolveum.com/xml/ns/public/types-3" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" oid="c7cf7874-fced-43e2-a6ec-e6677303a545">
+    <name>GitHub Roles</name>
+    <description>Archetype to represent GitHub groups as role objects in MidPoint. Roles created
+        under this archetype correspond to external GitHub groups and can be used to manage
+        membership assignments and synchronize entitlements.
+    </description>
+    <activation/>
+    <displayName>Archetype for GitHub roles</displayName>
+    <inducement id="4">
+        <construction>
+            <resourceRef oid="53278f8a-4157-4bc0-a38a-2c73233cdda6" relation="org:default" type="c:ResourceType"/>
+            <kind>account</kind>
+            <intent>default</intent>
+            <association id="5">
+                <ref>ri:groupMembership</ref>
+                <outbound>
+                    <strength>strong</strength>
+                    <expression>
+                        <associationFromLink>
+                            <projectionDiscriminator xsi:type="c:ShadowDiscriminatorType">
+                                <kind>entitlement</kind>
+                                <intent>group</intent>
+                            </projectionDiscriminator>
+                        </associationFromLink>
+                    </expression>
+                </outbound>
+            </association>
+        </construction>
+        <order>2</order>
+        <focusType>UserType</focusType>
+    </inducement>
+    <inducement id="11">
+        <targetRef oid="e12c658d-2b5d-4ead-bae0-33adcf63f11b" relation="org:default" type="c:RoleType">
+        </targetRef>
+    </inducement>
+    <archetypePolicy>
+        <display>
+            <label>GitHub group</label>
+            <pluralLabel>GitHub groups</pluralLabel>
+            <tooltip>GitHub groups</tooltip>
+            <icon>
+                <cssClass>fa-brands fa-github</cssClass>
+                <color>#060842</color>
+            </icon>
+        </display>
+    </archetypePolicy>
+    <superArchetypeRef oid="00000000-0000-0000-0000-000000000328" relation="org:default" type="c:ArchetypeType"/>
+</archetype>

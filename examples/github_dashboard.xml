@@ -1,0 +1,45 @@
+<dashboard xmlns="http://midpoint.evolveum.com/xml/ns/public/common/common-3" xmlns:c="http://midpoint.evolveum.com/xml/ns/public/common/common-3" xmlns:icfs="http://midpoint.evolveum.com/xml/ns/public/connector/icf-1/resource-schema-3" xmlns:org="http://midpoint.evolveum.com/xml/ns/public/common/org-3" xmlns:q="http://prism.evolveum.com/xml/ns/public/query-3" xmlns:ri="http://midpoint.evolveum.com/xml/ns/public/resource/instance-3" xmlns:t="http://prism.evolveum.com/xml/ns/public/types-3" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" oid="ae7c93f2-c08f-4d25-a6c2-8d7cf0dead16">
+    <name>github-dashboard</name>
+    <display>
+        <label>
+            <t:orig>Painel GitHub</t:orig>
+            <t:norm>painel github</t:norm>
+            <t:translation>
+                <t:key>GithubDashboard.title</t:key>
+            </t:translation>
+        </label>
+    </display>
+    <widget id="1">
+        <identifier>github-aacounts</identifier>
+        <description>Widget that shows all the github accounts.</description>
+        <display>
+            <label>GitHub Accounts</label>
+            <color>#00a65a</color>
+            <icon>
+                <cssClass>fa fa-database</cssClass>
+            </icon>
+        </display>
+        <data>
+            <sourceType>objectCollection</sourceType>
+            <collection>
+                <collectionRef oid="15c9cb58-f8b4-4c59-a46b-adfea2f41e4c" relation="org:default" type="c:ObjectCollectionType"/>
+            </collection>
+        </data>
+        <presentation>
+            <dataField id="19">
+                <fieldType>value</fieldType>
+                <expression>
+                    <proportional>
+                        <style>value-only</style>
+                    </proportional>
+                </expression>
+            </dataField>
+            <dataField id="20">
+                <fieldType>unit</fieldType>
+                <expression>
+                    <value>contas no GitHub</value>
+                </expression>
+            </dataField>
+        </presentation>
+    </widget>
+</dashboard>

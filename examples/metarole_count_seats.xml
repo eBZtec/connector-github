@@ -1,0 +1,51 @@
+<role xmlns="http://midpoint.evolveum.com/xml/ns/public/common/common-3" xmlns:c="http://midpoint.evolveum.com/xml/ns/public/common/common-3"
+      xmlns:icfs="http://midpoint.evolveum.com/xml/ns/public/connector/icf-1/resource-schema-3" xmlns:org="http://midpoint.evolveum.com/xml/ns/public/common/org-3"
+      xmlns:q="http://prism.evolveum.com/xml/ns/public/query-3" xmlns:ri="http://midpoint.evolveum.com/xml/ns/public/resource/instance-3"
+      xmlns:t="http://prism.evolveum.com/xml/ns/public/types-3" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" oid="e12c658d-2b5d-4ead-bae0-33adcf63f11b">
+    <name>metarole-count-seats</name>
+    <assignment id="9">
+        <identifier>limit-seats</identifier>
+        <policyRule>
+            <policyConstraints>
+                <custom id="11">
+                    <presentation>
+                        <message>
+                            <fallbackMessage>
+                                Maximum number of seats reached.
+                            </fallbackMessage>
+                        </message>
+                    </presentation>
+                    <expression>
+                        <script>
+                            <code>
+                                import com.evolveum.midpoint.xml.ns._public.common.common_3.*
+                                import com.evolveum.midpoint.prism.query.*
+
+
+                                // here is oid of meta-role to count seats
+                                def roleOid = "e12c658d-2b5d-4ead-bae0-33adcf63f11b"
+
+                                def count = midpoint.countObjects(
+                                        UserType.class,
+                                        prismContext.queryFor(UserType.class)
+                                                .item(UserType.F_ROLE_MEMBERSHIP_REF).ref(roleOid)
+                                                .build()
+                                )
+
+                                return count &gt;= 1000
+                            </code>
+                        </script>
+                    </expression>
+                </custom>
+            </policyConstraints>
+            <policyActions>
+                <enforcement/>
+            </policyActions>
+        </policyRule>
+        <activation>
+            <administrativeStatus>enabled</administrativeStatus>
+        </activation>
+    </assignment>
+    <activation/>
+    <displayName>GitHub Seats</displayName>
+</role>

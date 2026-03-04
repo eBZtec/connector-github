@@ -1,0 +1,332 @@
+<resource xmlns="http://midpoint.evolveum.com/xml/ns/public/common/common-3" xmlns:c="http://midpoint.evolveum.com/xml/ns/public/common/common-3"
+          xmlns:icfs="http://midpoint.evolveum.com/xml/ns/public/connector/icf-1/resource-schema-3" xmlns:org="http://midpoint.evolveum.com/xml/ns/public/common/org-3"
+          xmlns:q="http://prism.evolveum.com/xml/ns/public/query-3" xmlns:ri="http://midpoint.evolveum.com/xml/ns/public/resource/instance-3"
+          xmlns:t="http://prism.evolveum.com/xml/ns/public/types-3" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" oid="53278f8a-4157-4bc0-a38a-2c73233cdda6">
+    <name>GitHub Copilot</name>
+    <lifecycleState>active</lifecycleState>
+    <connectorRef type="c:ConnectorType">
+        <description>Reference to the ConnId GitHub connector. This is dynamic reference, it will be translated to
+            OID during import.
+            Only connector which is available is used (connector objects without existing JAR are ignored).
+        </description>
+        <filter>
+            <q:text>connectorType = "jp.openstandia.connector.github.GitHubEMUConnector" and available = "true"</q:text>
+        </filter>
+    </connectorRef>
+    <connectorConfiguration xmlns:icfc="http://midpoint.evolveum.com/xml/ns/public/connector/icf-1/connector-schema-3">
+        <icfc:configurationProperties
+                xmlns:gen50="http://midpoint.evolveum.com/xml/ns/public/connector/icf-1/bundle/jp.openstandia.connector.connector-github/jp.openstandia.connector.github.GitHubEMUConnector">
+            <gen50:enterpriseSlug>your_slug_here</gen50:enterpriseSlug>
+            <gen50:endpointURL
+                    xmlns="http://midpoint.evolveum.com/xml/ns/public/connector/icf-1/bundle/jp.openstandia.connector.connector-github/jp.openstandia.connector.github.GitHubEMUConnector"
+                    xmlns:s="http://midpoint.evolveum.com/xml/ns/public/model/scripting-3">https://api.github.com
+            </gen50:endpointURL>
+        </icfc:configurationProperties>
+    </connectorConfiguration>
+    <schema>
+        <generationConstraints>
+            <generateObjectClass>ri:GitHubCopilotSeat</generateObjectClass>
+            <generateObjectClass>ri:EMUGroup</generateObjectClass>
+            <generateObjectClass>ri:EMUUser</generateObjectClass>
+        </generationConstraints>
+    </schema>
+    <schemaHandling>
+        <objectType id="6">
+            <kind>account</kind>
+            <intent>default</intent>
+            <displayName>Contas</displayName>
+            <default>true</default>
+            <delineation>
+                <objectClass>ri:EMUUser</objectClass>
+            </delineation>
+            <focus>
+                <type>c:UserType</type>
+            </focus>
+            <attribute id="96">
+                <ref>userName</ref>
+                <outbound>
+                    <name>outbound_email-name</name>
+                    <strength>strong</strength>
+                    <source>
+                        <path>emailAddress</path>
+                    </source>
+                </outbound>
+                <inbound id="97">
+                    <name>inbound_userName-name</name>
+                    <strength>weak</strength>
+                    <target>
+                        <path>name</path>
+                    </target>
+                    <use>correlation</use>
+                </inbound>
+            </attribute>
+            <attribute id="98">
+                <ref>primaryEmail</ref>
+                <outbound>
+                    <name>outbound_email-primaryEmail</name>
+                    <strength>strong</strength>
+                    <source>
+                        <path>emailAddress</path>
+                    </source>
+                </outbound>
+                <inbound id="99">
+                    <name>inbound_primaryEmail-email</name>
+                    <strength>weak</strength>
+                    <target>
+                        <path>emailAddress</path>
+                    </target>
+                    <use>correlation</use>
+                </inbound>
+            </attribute>
+            <attribute id="101">
+                <ref>externalId</ref>
+                <outbound>
+                    <name>outbound_email-externalId</name>
+                    <strength>strong</strength>
+                    <source>
+                        <path>emailAddress</path>
+                    </source>
+                </outbound>
+            </attribute>
+            <attribute id="102">
+                <ref>displayName</ref>
+                <outbound>
+                    <name>outbound_displayName-name</name>
+                    <strength>strong</strength>
+                    <source>
+                        <path>name</path>
+                    </source>
+                </outbound>
+            </attribute>
+            <attribute id="103">
+                <ref>primaryRole</ref>
+                <outbound>
+                    <name>outbound_primaryRole</name>
+                    <strength>strong</strength>
+                    <expression>
+                        <script>
+                            <code>"User"</code>
+                        </script>
+                    </expression>
+                </outbound>
+            </attribute>
+            <association id="235">
+                <ref>ri:groupMembership</ref>
+                <inbound id="248">
+                    <name>inbound_groupMembership-assignment</name>
+                    <strength>strong</strength>
+                    <expression>
+                        <trace>false</trace>
+                        <assignmentTargetSearch>
+                            <targetType>c:RoleType</targetType>
+                            <filter>
+                                <q:text>identifier =
+                                    ```
+                                    def matcher = input =~ /groupId=([0-9a-fA-F-]+) \(primary identifier\)/
+
+                                    if (matcher.find()) {
+                                    def primaryIdentifier = matcher.group(1)
+                                    return primaryIdentifier.toString()
+                                    } else {
+                                    log.info("No primary identifier found")
+                                    return null
+                                    }
+                                    ```
+                                </q:text>
+                            </filter>
+                        </assignmentTargetSearch>
+                    </expression>
+                    <target>
+                        <path>assignment</path>
+                    </target>
+                </inbound>
+                <kind>entitlement</kind>
+                <intent>group</intent>
+                <direction>objectToSubject</direction>
+                <associationAttribute>ri:members.User.value</associationAttribute>
+                <valueAttribute>ri:userId</valueAttribute>
+                <explicitReferentialIntegrity>false</explicitReferentialIntegrity>
+            </association>
+            <activation>
+                <existence>
+                    <outbound id="139">
+                        <name>existence</name>
+                        <strength>normal</strength>
+                        <expression>
+                            <script>
+                                <code>focusExists</code>
+                            </script>
+                        </expression>
+                    </outbound>
+                </existence>
+                <administrativeStatus>
+                    <outbound id="140">
+                        <expression>
+                            <asIs/>
+                        </expression>
+                    </outbound>
+                </administrativeStatus>
+            </activation>
+            <correlation>
+                <correlators>
+                    <items id="33">
+                        <enabled>true</enabled>
+                        <item id="34">
+                            <ref>c:emailAddress</ref>
+                        </item>
+                    </items>
+                </correlators>
+            </correlation>
+            <synchronization>
+                <reaction id="86">
+                    <situation>linked</situation>
+                    <actions>
+                        <synchronize id="87"/>
+                    </actions>
+                </reaction>
+                <reaction id="89">
+                    <situation>disputed</situation>
+                    <actions>
+                        <createCorrelationCase id="90"/>
+                    </actions>
+                </reaction>
+                <reaction id="92">
+                    <situation>deleted</situation>
+                    <actions>
+                        <unlink id="93"/>
+                    </actions>
+                </reaction>
+                <reaction id="94">
+                    <situation>unlinked</situation>
+                    <actions>
+                        <link id="95"/>
+                    </actions>
+                </reaction>
+            </synchronization>
+        </objectType>
+        <objectType id="8">
+            <kind>entitlement</kind>
+            <intent>group</intent>
+            <displayName>Grupos</displayName>
+            <default>true</default>
+            <delineation>
+                <objectClass>ri:EMUGroup</objectClass>
+            </delineation>
+            <focus>
+                <type>c:RoleType</type>
+                <archetypeRef oid="c7cf7874-fced-43e2-a6ec-e6677303a545" relation="org:default" type="c:ArchetypeType"/>
+            </focus>
+            <attribute id="111">
+                <ref>displayName</ref>
+                <inbound id="112">
+                    <name>inbound_displayName-displayName</name>
+                    <strength>strong</strength>
+                    <target>
+                        <path>displayName</path>
+                    </target>
+                </inbound>
+                <inbound id="113">
+                    <name>inbound_displayName-name</name>
+                    <strength>strong</strength>
+                    <target>
+                        <path>name</path>
+                    </target>
+                </inbound>
+            </attribute>
+            <attribute id="221">
+                <ref>ri:groupId</ref>
+                <inbound id="222">
+                    <name>inbound_groupId-identifier</name>
+                    <strength>strong</strength>
+                    <target>
+                        <path>identifier</path>
+                    </target>
+                </inbound>
+            </attribute>
+            <synchronization>
+                <reaction id="105">
+                    <situation>linked</situation>
+                    <actions>
+                        <synchronize id="106"/>
+                    </actions>
+                </reaction>
+                <reaction id="107">
+                    <situation>unlinked</situation>
+                    <actions>
+                        <link id="108"/>
+                    </actions>
+                </reaction>
+                <reaction id="109">
+                    <situation>unmatched</situation>
+                    <actions>
+                        <addFocus id="110"/>
+                    </actions>
+                </reaction>
+            </synchronization>
+        </objectType>
+        <objectType id="12">
+            <kind>generic</kind>
+            <intent>seat</intent>
+            <displayName>Licenças Copilot</displayName>
+            <default>true</default>
+            <delineation>
+                <objectClass>ri:GitHubCopilotSeat</objectClass>
+            </delineation>
+            <attribute id="12">
+                <ref>displayName</ref>
+                <inbound id="13">
+                    <strength>strong</strength>
+                    <expression>
+                        <script>
+                            <code>
+                                def output = input.replaceAll('_seat$', '').replace('-', '.')
+                                return output
+                            </code>
+                        </script>
+                    </expression>
+                    <target>
+                        <path>name</path>
+                    </target>
+                    <use>correlation</use>
+                </inbound>
+            </attribute>
+            <correlation>
+                <correlators>
+                    <items id="14">
+                        <enabled>true</enabled>
+                        <item id="15">
+                            <ref>c:name</ref>
+                        </item>
+                    </items>
+                </correlators>
+            </correlation>
+            <synchronization>
+                <reaction id="16">
+                    <situation>linked</situation>
+                    <actions>
+                        <synchronize id="17"/>
+                    </actions>
+                </reaction>
+                <reaction id="18">
+                    <situation>deleted</situation>
+                    <actions>
+                        <unlink id="19"/>
+                    </actions>
+                </reaction>
+                <reaction id="20">
+                    <situation>disputed</situation>
+                    <actions>
+                        <createCorrelationCase id="21"/>
+                    </actions>
+                </reaction>
+                <reaction id="22">
+                    <situation>unlinked</situation>
+                    <actions>
+                        <link id="23"/>
+                    </actions>
+                </reaction>
+            </synchronization>
+        </objectType>
+    </schemaHandling>
+    <capabilities/>
+</resource>

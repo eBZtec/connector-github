@@ -69,7 +69,6 @@ class GitHubCopilotSeatPagedSearchIterableTest {
 
     @Test
     void shouldCallIteratorWhenResultIsNull() throws MalformedURLException, NoSuchFieldException, IllegalAccessException {
-        // Arrange
         GitHub mockRoot = mock(GitHub.class);
         GitHubRequest fakeRequest = GitHubRequest.newBuilder()
                 .withApiUrl("https://api.github.com")
@@ -80,22 +79,17 @@ class GitHubCopilotSeatPagedSearchIterableTest {
         GitHubCopilotSeatPagedSearchIterable<GitHubCopilotSeatPageIterator> iterable =
                 spy(new GitHubCopilotSeatPagedSearchIterable<>(mockRoot, fakeRequest, (Class) GitHubCopilotSeatsSearchResult.class));
 
-        // Mock do iterator
         PagedIterator<Object> mockIterator = mock(PagedIterator.class);
         when(mockIterator.hasNext()).thenReturn(false);
 
-        // Retorna o mock quando o método iterator() for chamado
         doReturn(mockIterator).when(iterable).iterator();
 
-        // Garante que result é nulo
         Field resultField = GitHubCopilotSeatPagedSearchIterable.class.getDeclaredField("result");
         resultField.setAccessible(true);
         resultField.set(iterable, null);
 
-        // Act
         iterable.populate();
 
-        // Assert
         verify(iterable, times(1)).iterator();
         verify(mockIterator, times(1)).hasNext();
     }
